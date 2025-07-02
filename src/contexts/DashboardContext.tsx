@@ -102,14 +102,53 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSelectedWidgetId(widgetId);
   }, []);
 
+  // Helper function to find the parent container of a widget
+  const findParentContainer = (layouts: WidgetLayoutItem[], widgetId: string): { container: ContainerWidget, containerId: string } | null => {
+    for (const item of layouts) {
+      const widget = item.widget as any;
+      if (widget.children?.layout?.layouts) {
+        // Check if the widget is in this container's layouts
+        const isInContainer = widget.children.layout.layouts.some((nestedItem: WidgetLayoutItem) => nestedItem.i === widgetId);
+        if (isInContainer) {
+          return { container: widget as ContainerWidget, containerId: item.i };
+        }
+        
+        // Recursively check nested containers
+        const nestedResult = findParentContainer(widget.children.layout.layouts as WidgetLayoutItem[], widgetId);
+        if (nestedResult) {
+          return nestedResult;
+        }
+      }
+    }
+    return null;
+  };
+
   const removeWidget = useCallback((widgetId: string) => {
-    setDashboardState((prevState) => ({
-      ...prevState,
-      layout: {
-        ...prevState.layout,
-        layouts: prevState.layout.layouts.filter((item) => item.i !== widgetId),
-      },
-    }));
+    setDashboardState((prevState) => {
+      // Create a deep copy of the current state
+      const newState = JSON.parse(JSON.stringify(prevState));
+      
+      // First, check if the widget is in the main layout
+      const isInMainLayout = prevState.layout.layouts.some((item: WidgetLayoutItem) => item.i === widgetId);
+      
+      if (isInMainLayout) {
+        // Remove from main layout
+        newState.layout.layouts = newState.layout.layouts.filter((item: WidgetLayoutItem) => item.i !== widgetId);
+      } else {
+        // Find which container has this widget
+        const parentInfo = findParentContainer(newState.layout.layouts, widgetId);
+        
+        if (parentInfo) {
+          // Remove from the container's layout
+          const { container } = parentInfo;
+          container.children.layout.layouts = container.children.layout.layouts.filter(
+            (item: WidgetLayoutItem) => item.i !== widgetId
+          );
+        }
+      }
+      
+      return newState;
+    });
 
     if (selectedWidgetId === widgetId) {
       setSelectedWidgetId(null);

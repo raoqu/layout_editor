@@ -120,6 +120,31 @@ const DashboardDesigner: React.FC = () => {
     <Layout style={{ height: '100vh' }}>
       <Header style={{ display: 'flex', alignItems: 'center', padding: '0 16px' }}>
         <h1 style={{ color: 'white', margin: 0, marginRight: 'auto' }}>Dashboard Designer</h1>
+        
+        {dashboardState.editMode && selectedWidgetId && (
+          <>
+            <span style={{ color: 'white', marginRight: 8 }}>
+              Selected: {dashboardState.layout.layouts.find(item => item.i === selectedWidgetId)?.widget.title}
+            </span>
+            <Button
+              type="primary"
+              icon={<SettingOutlined />}
+              onClick={() => setDrawerVisible(true)}
+              style={{ marginRight: 8 }}
+            >
+              Properties
+            </Button>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={handleRemoveWidget}
+              style={{ marginRight: 16 }}
+            >
+              Remove
+            </Button>
+          </>
+        )}
+        
         <Button
           type={dashboardState.editMode ? 'primary' : 'default'}
           icon={<EditOutlined />}
@@ -171,32 +196,6 @@ const DashboardDesigner: React.FC = () => {
             layout={dashboardState.layout}
             isEditing={dashboardState.editMode}
           />
-          {dashboardState.editMode && selectedWidgetId && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 16,
-                right: 16,
-                display: 'flex',
-                gap: 8,
-              }}
-            >
-              <Button
-                type="primary"
-                icon={<SettingOutlined />}
-                onClick={() => setDrawerVisible(true)}
-              >
-                Edit Properties
-              </Button>
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={handleRemoveWidget}
-              >
-                Remove Widget
-              </Button>
-            </div>
-          )}
         </Content>
       </Layout>
 
