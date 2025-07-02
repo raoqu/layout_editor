@@ -1,13 +1,13 @@
 import { AppstoreOutlined, BarChartOutlined, TableOutlined, CreditCardOutlined, LineChartOutlined } from '@ant-design/icons';
 import type { WidgetDefinition } from '../../types';
-import TextWidget from './TextWidget.tsx';
-import ChartWidget from './ChartWidget.tsx';
-import TableWidget from './TableWidget.tsx';
-import CardWidget from './CardWidget.tsx';
-import TextPropertyEditor from '../propertyEditors/TextPropertyEditor.tsx';
-import ChartPropertyEditor from '../propertyEditors/ChartPropertyEditor.tsx';
-import TablePropertyEditor from '../propertyEditors/TablePropertyEditor.tsx';
-import CardPropertyEditor from '../propertyEditors/CardPropertyEditor.tsx';
+import TextWidget from './TextWidget';
+import ChartWidget from './ChartWidget';
+import TableWidget from './TableWidget';
+import CardWidget from './CardWidget';
+import TextPropertyEditor from '../propertyEditors/TextPropertyEditor';
+import ChartPropertyEditor from '../propertyEditors/ChartPropertyEditor';
+import TablePropertyEditor from '../propertyEditors/TablePropertyEditor';
+import CardPropertyEditor from '../propertyEditors/CardPropertyEditor';
 
 // Registry of all available widgets
 const widgetRegistry: Record<string, WidgetDefinition> = {

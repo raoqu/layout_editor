@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from 'antd';
 import type { WidgetComponentProps } from '../../types';
 import type { ContainerWidget } from '../../types';
-import DashboardGrid from '../DashboardGrid.tsx';
+import DashboardGrid from '../DashboardGrid';
 
 const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelected }) => {
   const containerWidget = widget as ContainerWidget;
