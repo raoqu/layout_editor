@@ -5,6 +5,7 @@ import './CardWidget.css';
 import type { WidgetComponentProps } from '../../types';
 import type { ContainerWidget } from '../../types';
 import DashboardGrid from '../DashboardGrid';
+import DashboardPreview from '../DashboardPreview';
 import { DashboardContext } from '../../contexts/DashboardContext';
 import widgetRegistry from './WidgetRegistry';
 
@@ -75,12 +76,19 @@ const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelec
           }}
         >
           {containerWidget.children.layout.layouts.length > 0 ? (
-            <DashboardGrid
-              layout={containerWidget.children.layout}
-              isEditing={isEditing}
-              isNested={true}
-              parentId={containerWidget.id}
-            />
+            isEditing ? (
+              <DashboardGrid
+                layout={containerWidget.children.layout}
+                isEditing={true}
+                isNested={true}
+                parentId={containerWidget.id}
+              />
+            ) : (
+              <DashboardPreview
+                layout={containerWidget.children.layout}
+                isNested={true}
+              />
+            )
           ) : isEditing ? (
             <div className="card-empty-state">
               <AppstoreOutlined className="card-empty-state-icon" />
