@@ -8,7 +8,7 @@ interface DashboardContextProps {
   selectedWidgetId: string | null;
   setSelectedWidgetId: (id: string | null) => void;
   toggleEditMode: () => void;
-  addWidget: (widgetType: string, position?: { x: number, y: number }) => void;
+  addWidget: (widgetType: string, position?: { x: number, y: number }, containerId?: string) => void;
   removeWidget: (widgetId: string) => void;
   updateLayout: (newLayout: DashboardLayout) => void;
   updateWidgetProperty: (widgetId: string, propertyName: string, value: any) => void;
@@ -45,7 +45,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setSelectedWidgetId(null);
   }, []);
 
-  const addWidget = useCallback((widgetType: string, position?: { x: number, y: number }) => {
+  const addWidget = useCallback((widgetType: string, position?: { x: number, y: number }, containerId?: string) => {
     const widgetId = uuidv4();
     const newWidget = createWidget(widgetType, widgetId);
     
@@ -64,13 +64,40 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       widget: newWidget,
     };
 
-    setDashboardState((prevState) => ({
-      ...prevState,
-      layout: {
-        ...prevState.layout,
-        layouts: [...prevState.layout.layouts, newLayoutItem],
-      },
-    }));
+    // If containerId is provided, add the widget to that container
+    if (containerId) {
+      setDashboardState((prevState) => {
+        // Create a deep copy of the layouts
+        const newLayouts = JSON.parse(JSON.stringify(prevState.layout.layouts));
+        
+        // Find the container widget
+        const containerItem = findWidgetInLayout(newLayouts, containerId);
+        if (containerItem) {
+          const containerWidget = containerItem.widget as ContainerWidget;
+          if (containerWidget.children && containerWidget.children.layout) {
+            // Add the new widget to the container's layout
+            containerWidget.children.layout.layouts.push(newLayoutItem);
+          }
+        }
+        
+        return {
+          ...prevState,
+          layout: {
+            ...prevState.layout,
+            layouts: newLayouts,
+          },
+        };
+      });
+    } else {
+      // Add the widget to the main layout
+      setDashboardState((prevState) => ({
+        ...prevState,
+        layout: {
+          ...prevState.layout,
+          layouts: [...prevState.layout.layouts, newLayoutItem],
+        },
+      }));
+    }
 
     setSelectedWidgetId(widgetId);
   }, []);

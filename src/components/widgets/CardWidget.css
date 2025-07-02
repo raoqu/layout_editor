@@ -1,0 +1,43 @@
+.card-widget-container {
+  position: relative;
+}
+
+.card-widget-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.active-toolbar-btn {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+/* Style for the nested grid inside cards */
+.card-nested-grid {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+/* Empty state for cards with no widgets */
+.card-empty-state {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #bfbfbf;
+  background-color: #fafafa;
+  border-radius: 2px;
+}
+
+.card-empty-state-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.card-empty-state-text {
+  font-size: 14px;
+}
