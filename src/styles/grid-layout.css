@@ -55,10 +55,13 @@
   cursor: se-resize;
 }
 
-/* Hide the default resize handle in editing mode */
+/* Make default resize handle transparent but still functional */
 .editing-mode .react-resizable-handle {
   opacity: 0;
-  pointer-events: none;
+  width: 20px;
+  height: 20px;
+  z-index: 15;
+  pointer-events: auto;
 }
 
 /* Custom Widget Styles */
@@ -136,22 +139,30 @@
   bottom: 0;
   right: 0;
   cursor: se-resize;
-  pointer-events: auto;
+  pointer-events: none; /* Let events pass through to the real resize handle */
   background-color: rgba(24, 144, 255, 0.3);
   border-top-left-radius: 4px;
   border-top: 1px dashed rgba(24, 144, 255, 0.3);
   border-left: 1px dashed rgba(24, 144, 255, 0.3);
+  z-index: 14; /* Just below the real resize handle */
 }
 
 /* Show overlay elements on hover */
 .widget-container:hover .widget-drag-area,
 .widget-container:hover .widget-resize-area {
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 .widget-container.selected .widget-drag-area,
 .widget-container.selected .widget-resize-area {
-  opacity: 0.5;
+  opacity: 0.7;
+}
+
+/* Highlight resize area on hover */
+.widget-resize-area:hover {
+  background-color: rgba(24, 144, 255, 0.5);
+  border-top: 1px dashed rgba(24, 144, 255, 0.7);
+  border-left: 1px dashed rgba(24, 144, 255, 0.7);
 }
 
 /* Legacy widget-drag-handle for backward compatibility */

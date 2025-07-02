@@ -27,7 +27,7 @@ const initialDashboardState: DashboardState = {
       margin: [10, 10],
     },
   },
-  editMode: false,
+  editMode: true, // Set edit mode to true by default
   selectedWidgetId: null,
 };
 
