@@ -55,14 +55,10 @@
   cursor: se-resize;
 }
 
-/* Make resize handle more prominent in editing mode */
+/* Hide the default resize handle in editing mode */
 .editing-mode .react-resizable-handle {
-  width: 24px;
-  height: 24px;
-  background-color: rgba(24, 144, 255, 0.1);
-  border-top-left-radius: 4px;
-  border-left: 1px dashed #1890ff;
-  border-top: 1px dashed #1890ff;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Custom Widget Styles */
@@ -85,19 +81,82 @@
   border-color: #1890ff;
   border-style: dashed;
   border-width: 2px;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.5);
 }
 
-.widget-drag-handle {
+/* Widget overlay for drag and resize */
+.widget-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
+  bottom: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.widget-drag-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px; /* Top drag handle */
+  cursor: move;
+  pointer-events: auto;
+  background-color: rgba(24, 144, 255, 0.3);
+  border-bottom: 1px dashed rgba(24, 144, 255, 0.3);
+}
+
+/* Additional drag handles on sides */
+.widget-drag-area::before,
+.widget-drag-area::after {
+  content: '';
+  position: absolute;
+  top: 24px; /* Start below the top handle */
+  bottom: 20px; /* Leave space for resize handle */
+  width: 8px;
+  background-color: rgba(24, 144, 255, 0.3);
+  pointer-events: auto;
+  border-right: 1px dashed rgba(24, 144, 255, 0.3);
+  border-left: 1px dashed rgba(24, 144, 255, 0.3);
+}
+
+.widget-drag-area::before {
+  left: 0;
+}
+
+.widget-drag-area::after {
+  right: 0;
+}
+
+.widget-resize-area {
+  position: absolute;
+  width: 20px;
   height: 20px;
-  background-color: rgba(0, 0, 0, 0.03);
-  border-bottom: 1px solid #e8e8e8;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  pointer-events: auto;
+  background-color: rgba(24, 144, 255, 0.3);
   border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  border-top: 1px dashed rgba(24, 144, 255, 0.3);
+  border-left: 1px dashed rgba(24, 144, 255, 0.3);
+}
+
+/* Show overlay elements on hover */
+.widget-container:hover .widget-drag-area,
+.widget-container:hover .widget-resize-area {
+  opacity: 0.5;
+}
+
+.widget-container.selected .widget-drag-area,
+.widget-container.selected .widget-resize-area {
+  opacity: 0.5;
+}
+
+/* Legacy widget-drag-handle for backward compatibility */
+.widget-drag-handle {
+  display: none;
   cursor: move;
   z-index: 10;
 }
@@ -109,7 +168,9 @@
 
 /* Adjust widget content to account for drag handle */
 .widget-container .widget-content {
-  padding-top: 20px;
-  height: calc(100% - 20px);
+  /* padding: 4px; */
+  height: 100%;
   overflow: auto;
+  position: relative;
+  z-index: 5; /* Higher than base elements but lower than overlay interactive elements */
 }

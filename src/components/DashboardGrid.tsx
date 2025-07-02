@@ -199,7 +199,7 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
         compactType="horizontal"
         preventCollision={false}
         resizeHandles={['se']}
-        draggableHandle=".widget-drag-handle"
+        draggableHandle=".widget-drag-area"
       >
         {layout.layouts.map((item) => {
           const WidgetComponent = getWidgetDefinition(item.widget.type).component;
@@ -210,9 +210,9 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
               className={`widget-container ${selectedWidgetId === item.i ? 'selected' : ''}`}
               style={{ 
                 overflow: 'hidden',
+                position: 'relative'
               }}
             >
-              {isEditing && <div className="widget-drag-handle" />}
               <div className="widget-content">
                 <WidgetComponent
                   widget={item.widget}
@@ -220,6 +220,12 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
                   isSelected={selectedWidgetId === item.i}
                 />
               </div>
+              {isEditing && (
+                <div className="widget-overlay">
+                  <div className="widget-drag-area" />
+                  <div className="widget-resize-area" />
+                </div>
+              )}
             </div>
           );
         })}
