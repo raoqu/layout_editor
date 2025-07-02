@@ -27,39 +27,42 @@ const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelec
     onClick: () => handleAddWidget(widgetDef.type)
   }));
 
+  const titleContent = (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span>{title}</span>
+      {isEditing && (
+        <Dropdown 
+          menu={{ items: widgetMenuItems }} 
+          trigger={['click']}
+          onOpenChange={(open) => setShowToolbar(open)}
+        >
+          <Button 
+            type="text" 
+            size="small" 
+            icon={<PlusOutlined />}
+            className={showToolbar ? 'active-toolbar-btn' : ''}
+          >
+            Add Widget
+          </Button>
+        </Dropdown>
+      )}
+    </div>
+  );
+
   return (
     <Card
-      title={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>{title}</span>
-          {isEditing && (
-            <Dropdown 
-              menu={{ items: widgetMenuItems }} 
-              trigger={['click']}
-              onOpenChange={(open) => setShowToolbar(open)}
-            >
-              <Button 
-                type="text" 
-                size="small" 
-                icon={<PlusOutlined />}
-                className={showToolbar ? 'active-toolbar-btn' : ''}
-              >
-                Add Widget
-              </Button>
-            </Dropdown>
-          )}
-        </div>
-      }
+      title={title ||  null}
+      headStyle={{ display: title || isEditing ? 'block' : 'none' }}
       variant={bordered ? 'outlined' : 'borderless'}
       style={{ 
         height: '100%', 
         width: '100%',
-        border: isSelected ? '2px dashed #1890ff' : undefined,
+        border: isSelected ? '1px dashed #1890ff' : undefined,
       }}
       styles={{
         body: { 
-          height: 'calc(100% - 57px)', 
-          padding: '0',
+          padding: '8px', 
+          height: (title || isEditing) ? 'calc(100% - 57px)' : '100%',
           overflow: 'hidden',
         },
         header: {

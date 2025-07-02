@@ -9,13 +9,14 @@ const ChartWidget: React.FC<WidgetComponentProps> = ({ widget, isSelected }) => 
 
   return (
     <Card 
-      title={title}
+      title={title || null}
+      headStyle={{ display: title ? 'block' : 'none' }}
       style={{ 
         height: '100%', 
         width: '100%',
         border: isSelected ? '2px dashed #1890ff' : '1px solid #f0f0f0',
       }}
-      bodyStyle={{ height: 'calc(100% - 57px)', padding: '8px' }}
+      bodyStyle={{ height: title ? 'calc(100% - 57px)' : '100%', padding: '8px' }}
     >
       <div style={{ 
         height: '100%', 
