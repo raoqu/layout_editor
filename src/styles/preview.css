@@ -1,0 +1,24 @@
+/* Preview-specific styles */
+.preview-mode .widget-container {
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide resize handles in preview mode */
+.preview-mode .react-resizable-handle {
+  display: none;
+}
+
+/* Remove any selection styling */
+.preview-mode .widget-container.selected {
+  border-color: #e8e8e8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure content takes full height */
+.preview-mode .widget-content {
+  height: 100%;
+  padding: 0;
+}

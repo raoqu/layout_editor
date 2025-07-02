@@ -11,16 +11,18 @@ const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelec
   return (
     <Card
       title={title}
-      bordered={bordered}
+      variant={bordered ? 'outlined' : 'borderless'}
       style={{ 
         height: '100%', 
         width: '100%',
-        border: isSelected ? '2px dashed #1890ff' : bordered ? '1px solid #f0f0f0' : 'none',
+        border: isSelected ? '2px dashed #1890ff' : undefined,
       }}
-      bodyStyle={{ 
-        height: 'calc(100% - 57px)', 
-        padding: '0',
-        overflow: 'hidden',
+      styles={{
+        body: { 
+          height: 'calc(100% - 57px)', 
+          padding: '0',
+          overflow: 'hidden',
+        }
       }}
     >
       {containerWidget.children && (

@@ -6,6 +6,7 @@ import {
   ExportOutlined,
   DeleteOutlined,
   SettingOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 import { DashboardContext } from '../contexts/DashboardContext';
 import DashboardGrid from './DashboardGrid';
@@ -52,6 +53,13 @@ const DashboardDesigner: React.FC = () => {
     const data = exportDashboard();
     setExportData(data);
     setExportModalVisible(true);
+  };
+
+  const handlePreview = () => {
+    // Save the current layout to localStorage for the preview page to access
+    localStorage.setItem('dashboardPreviewData', exportDashboard());
+    // Open preview in a new tab
+    window.open('/preview', '_blank');
   };
 
   const handleImport = () => {
@@ -130,8 +138,15 @@ const DashboardDesigner: React.FC = () => {
         <Button
           icon={<ExportOutlined />}
           onClick={handleExport}
+          style={{ marginRight: 8 }}
         >
           Export
+        </Button>
+        <Button
+          icon={<EyeOutlined />}
+          onClick={handlePreview}
+        >
+          Preview
         </Button>
       </Header>
       <Layout>

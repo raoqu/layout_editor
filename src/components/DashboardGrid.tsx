@@ -60,6 +60,7 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
 
   return (
     <div 
+      className={isEditing ? 'editing-mode' : ''}
       style={{ 
         height: '100%', 
         width: '100%', 
