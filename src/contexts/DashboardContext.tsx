@@ -90,10 +90,27 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [selectedWidgetId]);
 
   const updateLayout = useCallback((newLayout: DashboardLayout) => {
-    setDashboardState((prevState) => ({
-      ...prevState,
-      layout: newLayout,
-    }));
+    setDashboardState((prevState) => {
+      // Ensure we preserve widget data when updating layout
+      const updatedLayouts = newLayout.layouts.map(item => {
+        const existingItem = prevState.layout.layouts.find(li => li.i === item.i);
+        if (existingItem) {
+          return {
+            ...item,
+            widget: existingItem.widget
+          };
+        }
+        return item;
+      });
+      
+      return {
+        ...prevState,
+        layout: {
+          ...newLayout,
+          layouts: updatedLayouts
+        },
+      };
+    });
   }, []);
 
   const findWidgetInLayout = (layouts: WidgetLayoutItem[], widgetId: string): WidgetLayoutItem | null => {

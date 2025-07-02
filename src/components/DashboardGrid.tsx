@@ -1,8 +1,11 @@
 import React, { useContext } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
+// Import the CSS directly from node_modules
+import '../styles/grid-layout.css';
 import type { DashboardLayout, WidgetLayoutItem } from '../types';
 import { getWidgetDefinition } from './widgets/WidgetRegistry';
 import { DashboardContext } from '../contexts/DashboardContext';
+import './DashboardGrid.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -80,8 +83,10 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
         isResizable={isEditing}
         onLayoutChange={handleLayoutChange}
         style={{ height: '100%' }}
-        compactType={null}
-        preventCollision={true}
+        compactType="horizontal"
+        preventCollision={false}
+        resizeHandles={['se']}
+        draggableHandle=".widget-drag-handle"
       >
         {layout.layouts.map((item) => {
           const WidgetComponent = getWidgetDefinition(item.widget.type).component;
@@ -89,16 +94,19 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
             <div 
               key={item.i} 
               onClick={(e) => handleWidgetSelect(item.i, e)}
+              className={`widget-container ${selectedWidgetId === item.i ? 'selected' : ''}`}
               style={{ 
                 overflow: 'hidden',
-                cursor: isEditing ? 'move' : 'default',
               }}
             >
-              <WidgetComponent
-                widget={item.widget}
-                isEditing={isEditing}
-                isSelected={selectedWidgetId === item.i}
-              />
+              {isEditing && <div className="widget-drag-handle" />}
+              <div className="widget-content">
+                <WidgetComponent
+                  widget={item.widget}
+                  isEditing={isEditing}
+                  isSelected={selectedWidgetId === item.i}
+                />
+              </div>
             </div>
           );
         })}

@@ -1,0 +1,54 @@
+/* DashboardGrid.css */
+.widget-container {
+  position: relative;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.widget-container.selected {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.widget-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid #e8e8e8;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  cursor: move;
+  z-index: 10;
+}
+
+/* Custom resize handle styling */
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%226%22 height%3D%226%22%3E%3Cpath d%3D%22M6 6H0V4.2h4.2V0H6v6z%22 fill%3D%22%23999%22%2F%3E%3C%2Fsvg%3E');
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  cursor: se-resize;
+}
+
+/* Make the resize handle more visible on hover */
+.react-resizable-handle:hover {
+  background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%226%22 height%3D%226%22%3E%3Cpath d%3D%22M6 6H0V4.2h4.2V0H6v6z%22 fill%3D%22%231890ff%22%2F%3E%3C%2Fsvg%3E');
+}
+
+/* Adjust widget content to account for drag handle */
+.widget-container.selected .react-grid-item {
+  padding-top: 20px;
+}
