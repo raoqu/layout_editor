@@ -14,6 +14,8 @@ A flexible and powerful dashboard designer built with React, TypeScript, and Vit
   - **Improved UI Controls**: Widget action buttons positioned in the header for better usability
 - **Import/Export**: Save and load dashboard configurations as JSON
 - **Responsive Design**: Layouts adapt to different screen sizes
+- **Widget Marketplace**: Discover and install custom widgets from the marketplace
+  - **Remote Widget Integration**: Load and run widgets from remote sources using qiankun micro-frontend framework
 
 ## Installation
 
@@ -74,9 +76,58 @@ Card widgets can contain their own layouts, allowing for complex dashboard desig
 - Click "Export" to save your dashboard configuration as JSON
 - Click "Import" to load a previously saved configuration
 
+### Widget Marketplace
+
+The Dashboard Designer includes a widget marketplace that allows you to discover, install, and use custom widgets developed by third parties.
+
+#### Using the Marketplace
+
+1. Click on the "Marketplace" button in the sidebar
+2. Browse available widgets or search for specific functionality
+3. Click on a widget to view details
+4. Click "Install" to add the widget to your dashboard
+5. The widget will now be available in your widget list
+
+#### Managing Remote Widget Sources
+
+1. In the Marketplace, click on the "Remote Widget Sources" tab
+2. View all registered remote widget URLs
+3. Click "Add Widget Source" to register a new remote widget URL
+4. Click "Refresh" next to a widget to update it from its source
+5. Click "Refresh All" to update all registered widgets
+
+Remote widget URLs are remembered between sessions, allowing you to easily update widgets when new versions are available.
+
+#### Remote Widget Architecture
+
+Dash Designer uses the [qiankun](https://qiankun.umijs.org/) micro-frontend framework to load and run remote widgets. This provides several benefits:
+
+- **Isolation**: Each widget runs in its own sandbox environment
+- **Independent Development**: Widget developers can work independently using their preferred tools
+- **Dynamic Loading**: Widgets are loaded on-demand
+- **Versioning**: Support for multiple versions of the same widget
+
+#### Developing Remote Widgets
+
+To create a compatible remote widget:
+
+1. Create a standard web application using any framework
+2. Implement the qiankun lifecycle hooks (`bootstrap`, `mount`, `unmount`, `update`)
+3. Provide a `manifest.json` file with widget metadata
+4. Optionally create a property editor component
+5. Deploy your widget to a static hosting service
+
+See the example widget template in the marketplace for a starting point.
+
 ## Changelog
 
 ### July 2025
+
+#### Widget Marketplace and Remote Widget Integration
+- Implemented a comprehensive widget marketplace for discovering and installing third-party widgets
+- Transitioned to qiankun micro-frontend framework for loading remote widgets
+- Removed legacy RemoteWidgetWrapper in favor of MicroAppContainer for better isolation and lifecycle management
+- Added support for remote property editors through qiankun integration
 
 #### Improved Widget Drag Behavior
 - Added smart widget positioning system that preserves original widget positions during drag operations

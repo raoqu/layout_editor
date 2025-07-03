@@ -1,6 +1,6 @@
 import React, { createContext, useState, useCallback } from 'react';
 import type { DashboardState, DashboardLayout, ContainerWidget, WidgetLayoutItem } from '../types';
-import { createWidget } from '../components/widgets/WidgetRegistry';
+import WidgetPluginSystem from '../marketplace/WidgetPluginSystem';
 import { v4 as uuidv4 } from 'uuid';
 import { findWidgetInLayout, createBottomPositionedItem } from '../utils/layoutUtils';
 
@@ -48,8 +48,11 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const addWidget = useCallback((widgetType: string, position?: { x: number, y: number }, containerId?: string) => {
+    console.log(`[DashboardContext] Adding widget of type '${widgetType}' to ${containerId ? `container '${containerId}'` : 'dashboard'}`);
     const widgetId = uuidv4();
-    const newWidget = createWidget(widgetType, widgetId);
+    console.log(`[DashboardContext] Generated widget ID: ${widgetId}`);
+    const newWidget = WidgetPluginSystem.createWidget(widgetType, widgetId);
+    console.log(`[DashboardContext] Widget created:`, newWidget);
     
     // Default widget dimensions
     const w = widgetType === 'card' ? 6 : widgetType === 'table' ? 6 : 4;

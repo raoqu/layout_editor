@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, List, Input, Select, Tag, Button, Spin, Modal, Rate, Typography, Space, Divider } from 'antd';
-import { SearchOutlined, DownloadOutlined, FilterOutlined, SortAscendingOutlined } from '@ant-design/icons';
+import { Card, List, Input, Select, Tag, Button, Spin, Modal, Rate, Typography, Space, Divider, Tabs } from 'antd';
+import { SearchOutlined, DownloadOutlined, FilterOutlined, SortAscendingOutlined, CloudOutlined } from '@ant-design/icons';
 import { MockMarketplaceService } from './MarketplaceService';
 import type { MarketplaceWidgetMetadata, WidgetFilters } from './types';
+import RemoteWidgetManager from './RemoteWidgetManager';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 interface WidgetMarketplaceProps {
   onWidgetInstalled?: () => void;
@@ -25,6 +27,7 @@ const WidgetMarketplace: React.FC<WidgetMarketplaceProps> = ({ onWidgetInstalled
   const [selectedWidget, setSelectedWidget] = useState<MarketplaceWidgetMetadata | null>(null);
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [activeTab, setActiveTab] = useState('1');
 
   const marketplaceService = new MockMarketplaceService();
 
@@ -103,53 +106,66 @@ const WidgetMarketplace: React.FC<WidgetMarketplaceProps> = ({ onWidgetInstalled
     }
   };
 
-  return (
-    <div className="widget-marketplace">
-      <div className="marketplace-header">
-        <Title level={2}>Widget Marketplace</Title>
-        <Paragraph>
-          Discover and install custom widgets to enhance your dashboards
-        </Paragraph>
-        
-        <div className="marketplace-filters">
-          <Space wrap>
-            <Input.Search
-              placeholder="Search widgets..."
-              onSearch={handleSearch}
-              style={{ width: 250 }}
-              prefix={<SearchOutlined />}
-              allowClear
-            />
-            
-            <Select
-              defaultValue="popular"
-              style={{ width: 150 }}
-              onChange={handleSortChange}
-              prefix={<SortAscendingOutlined />}
-            >
-              <Option value="popular">Most Popular</Option>
-              <Option value="recent">Recently Updated</Option>
-              <Option value="rating">Highest Rated</Option>
-            </Select>
-            
-            <div className="filter-label">
-              <FilterOutlined /> Filter by tags:
-            </div>
-            
-            <div className="tag-filters">
-              {['weather', 'timer', 'chart', 'finance', 'data'].map(tag => (
-                <Tag
-                  key={tag}
-                  color={filters.tags?.includes(tag) ? 'blue' : 'default'}
-                  onClick={() => handleTagClick(tag)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {tag}
-                </Tag>
-              ))}
-            </div>
-          </Space>
-        </div>
+  // Handler for tab changes
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    
+    // Log when the Remote Widgets tab is shown
+    if (key === '2') {
+      console.log('Remote Widgets tab is now active');
+    }
+  };
+
+  // Handler for widget updates from RemoteWidgetManager
+  const handleWidgetUpdated = () => {
+    // Refresh the widget list when a remote widget is updated
+    fetchWidgets();
+    if (onWidgetInstalled) {
+      onWidgetInstalled();
+    }
+  };
+
+  // Render the browse widgets tab content
+  const renderBrowseTab = () => (
+    <>
+      <div className="marketplace-filters">
+        <Space wrap>
+          <Input.Search
+            placeholder="Search widgets..."
+            onSearch={handleSearch}
+            style={{ width: 250 }}
+            prefix={<SearchOutlined />}
+            allowClear
+          />
+          
+          <Select
+            defaultValue="popular"
+            style={{ width: 150 }}
+            onChange={handleSortChange}
+            prefix={<SortAscendingOutlined />}
+          >
+            <Option value="popular">Most Popular</Option>
+            <Option value="recent">Recently Updated</Option>
+            <Option value="rating">Highest Rated</Option>
+          </Select>
+          
+          <div className="filter-label">
+            <FilterOutlined /> Filter by tags:
+          </div>
+          
+          <div className="tag-filters">
+            {['weather', 'timer', 'chart', 'finance', 'data'].map(tag => (
+              <Tag
+                key={tag}
+                color={filters.tags?.includes(tag) ? 'blue' : 'default'}
+                onClick={() => handleTagClick(tag)}
+                style={{ cursor: 'pointer' }}
+              >
+                {tag}
+              </Tag>
+            ))}
+          </div>
+        </Space>
       </div>
       
       <Divider />
@@ -207,6 +223,42 @@ const WidgetMarketplace: React.FC<WidgetMarketplaceProps> = ({ onWidgetInstalled
           )}
         />
       )}
+    </>
+  );
+
+  return (
+    <div className="widget-marketplace">
+      <div className="marketplace-header">
+        <Title level={2}>Widget Marketplace</Title>
+        <Paragraph>
+          Discover and install custom widgets to enhance your dashboards
+        </Paragraph>
+      </div>
+      
+      <Tabs activeKey={activeTab} onChange={handleTabChange}>
+        <TabPane 
+          tab={
+            <span>
+              <DownloadOutlined />
+              Browse Widgets
+            </span>
+          } 
+          key="1"
+        >
+          {renderBrowseTab()}
+        </TabPane>
+        <TabPane 
+          tab={
+            <span>
+              <CloudOutlined />
+              Remote Widget Sources
+            </span>
+          } 
+          key="2"
+        >
+          <RemoteWidgetManager onWidgetUpdated={handleWidgetUpdated} />
+        </TabPane>
+      </Tabs>
       
       <Modal
         title={selectedWidget?.name}

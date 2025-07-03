@@ -6,7 +6,10 @@ export interface WidgetBase {
   id: string;
   type: string;
   title: string;
-  properties: Record<string, any>;
+  properties: {
+    remoteUrl?: string;
+    [key: string]: any;
+  };
 }
 
 // Layout item with additional widget data

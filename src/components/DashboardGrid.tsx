@@ -5,9 +5,11 @@ import '../styles/grid-layout.css';
 import '../styles/widget-actions.css';
 import { DashboardContext } from '../contexts/DashboardContext';
 import type { WidgetLayoutItem, DashboardLayout } from '../types';
-import { getWidgetDefinition } from './widgets/WidgetRegistry';
+// Use widgetPluginSystem instead of direct import from WidgetRegistry
+import widgetPluginSystem from '../marketplace/WidgetPluginSystem';
 // AddWidgetButton removed as it's no longer needed
 import { optimizeLayoutForDragging } from '../utils/layoutUtils';
+// Import our new MicroAppContainer for qiankun integration
 import './DashboardGrid.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -159,7 +161,27 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
         draggableHandle=".widget-drag-area"
       >
         {layout.layouts.map((item) => {
-          const WidgetComponent = getWidgetDefinition(item.widget.type).component;
+          console.log(`[DashboardGrid] Rendering widget: ${item.widget.type} (ID: ${item.i})`);
+          const widgetDef = widgetPluginSystem.getWidgetDefinition(item.widget.type);
+          
+          // Skip rendering if widget definition is not found
+          if (!widgetDef) {
+            console.error(`[DashboardGrid] Widget definition not found for type: ${item.widget.type}`);
+            return (
+              <div 
+                key={item.i} 
+                className="widget-container error"
+                style={{ padding: '10px', color: 'red' }}
+              >
+                Widget type '{item.widget.type}' not found
+              </div>
+            );
+          }
+          
+          console.log(`[DashboardGrid] Widget definition:`, widgetDef);
+          const WidgetComponent = widgetDef.component;
+          console.log(`[DashboardGrid] Widget component:`, WidgetComponent);
+          
           return (
             <div 
               key={item.i} 
@@ -171,11 +193,28 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
               }}
             >
               <div className="widget-content">
-                <WidgetComponent
-                  widget={item.widget}
-                  isEditing={isEditing}
-                  isSelected={selectedWidgetId === item.i}
-                />
+                {(() => {
+                  console.log(`[DashboardGrid] Rendering widget component for ${item.widget.type}`);
+                  console.log(`[DashboardGrid] Widget props:`, {
+                    id: item.widget.id,
+                    type: item.widget.type,
+                    properties: item.widget.properties
+                  });
+                  return null;
+                })()}
+                
+                {/* Render all widgets with Suspense, qiankun will handle remote widgets */}
+                <React.Suspense fallback={
+                  <div style={{ padding: '20px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div>Loading {item.widget.type} widget...</div>
+                  </div>
+                }>
+                  <WidgetComponent
+                    widget={item.widget}
+                    isEditing={isEditing}
+                    isSelected={selectedWidgetId === item.i}
+                  />
+                </React.Suspense>
               </div>
               {isEditing && (
                 <div className="widget-overlay">

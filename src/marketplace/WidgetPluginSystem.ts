@@ -2,7 +2,7 @@ import React from 'react';
 import type { WidgetDefinition } from '../types';
 import type { RemoteWidgetManifest } from './types';
 import WIDGET_REGISTRY from '../components/widgets/WidgetRegistry';
-import { getWidgetDefinition } from '../components/widgets/WidgetRegistry';
+import { getWidgetDefinition, createWidget as createBuiltInWidget } from '../components/widgets/WidgetRegistry';
 
 /**
  * Widget Plugin System
@@ -38,15 +38,18 @@ class WidgetPluginSystem {
    */
   registerWidget(widget: WidgetDefinition): boolean {
     try {
+      console.log(`[WidgetPluginSystem] Registering widget: ${widget.name} (${widget.type})`);
+      
       // Validate widget definition
       if (!this.validateWidgetDefinition(widget)) {
-        console.error('Invalid widget definition:', widget);
+        console.error('[WidgetPluginSystem] Invalid widget definition:', widget);
         return false;
       }
 
       // Add to external widgets map
       this.externalWidgets[widget.type] = widget;
-      console.log(`Widget ${widget.name} (${widget.type}) registered successfully`);
+      console.log(`[WidgetPluginSystem] Widget ${widget.name} (${widget.type}) registered successfully`);
+      console.log('[WidgetPluginSystem] Updated external widgets:', Object.keys(this.externalWidgets));
       return true;
     } catch (error) {
       console.error('Failed to register widget:', error);
@@ -109,13 +112,19 @@ class WidgetPluginSystem {
    * @returns Widget definition or undefined if not found
    */
   getWidgetDefinition(type: string): WidgetDefinition | undefined {
+    console.log(`[WidgetPluginSystem] Looking up widget definition for type: '${type}'`);
+    console.log(`[WidgetPluginSystem] Available external widgets:`, Object.keys(this.externalWidgets));
+    
     // First check external widgets
     if (this.externalWidgets[type]) {
+      console.log(`[WidgetPluginSystem] Found external widget for type: '${type}'`, this.externalWidgets[type]);
       return this.externalWidgets[type];
     }
 
     // Fall back to built-in widgets
-    return getWidgetDefinition(type);
+    const builtInWidget = getWidgetDefinition(type);
+    console.log(`[WidgetPluginSystem] Found built-in widget for type: '${type}'`, builtInWidget || 'Not found');
+    return builtInWidget;
   }
 
   /**
@@ -133,50 +142,105 @@ class WidgetPluginSystem {
    */
   async registerRemoteWidget(url: string): Promise<boolean> {
     try {
-      // Fetch the widget manifest from the remote URL
+      console.log('[WidgetPluginSystem] Registering remote widget from URL:', url);
       const response = await fetch(`${url}/manifest.json`);
       if (!response.ok) {
+        console.error('[WidgetPluginSystem] Failed to fetch manifest:', response.statusText);
         throw new Error(`Failed to fetch widget manifest: ${response.statusText}`);
       }
-
       const manifest: RemoteWidgetManifest = await response.json();
-
-      // Validate the manifest
+      console.log('[WidgetPluginSystem] Loaded manifest:', manifest);
       if (!manifest.type || !manifest.name || !manifest.version) {
         throw new Error('Invalid widget manifest: missing required fields');
       }
-
-      // Create a widget definition from the manifest
+      
+      // Import the MicroAppContainer and MicroAppPropertyEditor for qiankun integration
+      const MicroAppContainer = (await import('../components/widgets/MicroAppContainer')).default;
+      const MicroAppPropertyEditor = (await import('../components/widgets/MicroAppPropertyEditor')).default;
+      
       const widgetDefinition: WidgetDefinition = {
         type: manifest.type,
         name: manifest.name,
-        // Use a dynamic import for the icon
         icon: React.createElement('div', null, '📦'),
         defaultSize: manifest.defaultSize || [4, 3],
-        defaultProperties: manifest.defaultProperties || {},
-        // Use dynamic imports for the component and property editor
-        component: React.lazy(() => import(/* @vite-ignore */ `${url}/widget.js`).then(module => ({ default: module.default }))),
-        propertyEditor: manifest.hasPropertyEditor ? 
-          React.lazy(() => import(/* @vite-ignore */ `${url}/property-editor.js`).then(module => ({ default: module.default }))) : 
-          undefined,
-        isRemote: true,
-        remoteUrl: url
+        defaultProperties: {
+          ...manifest.defaultProperties || {},
+          remoteUrl: url, // Store the remote URL in properties
+          title: manifest.name || 'Remote Widget',
+          description: manifest.description || 'This is a remote widget'
+        },
+        isRemote: true, // Mark this as a remote widget
+        remoteUrl: url, // Store the remote URL
+        // Use our MicroAppContainer for qiankun integration
+        component: MicroAppContainer,
+        // Use our MicroAppPropertyEditor
+        propertyEditor: MicroAppPropertyEditor
       };
 
-      // Register the widget
-      const success = this.registerWidget(widgetDefinition);
-
-      if (success) {
-        // Store the remote URL
-        this.remoteWidgetUrls[manifest.type] = url;
-        this.saveRemoteWidgetUrls();
+      // Validate and register the widget
+      if (this.validateWidgetDefinition(widgetDefinition)) {
+        console.log('[WidgetPluginSystem] Registering remote widget:', widgetDefinition);
+        const registered = this.registerWidget(widgetDefinition);
+        if (registered) {
+          // Store the remote URL for this widget type
+          this.remoteWidgetUrls[manifest.type] = url;
+          this.saveRemoteWidgetUrls();
+          return true;
+        }
       }
-
-      return success;
+      return false;
     } catch (error) {
-      console.error('Failed to register remote widget:', error);
+      console.error('[WidgetPluginSystem] Error registering remote widget:', error);
       return false;
     }
+  }
+
+  /**
+   * Create a new widget instance from a widget type
+   * @param type Widget type to create
+   * @param id Unique ID for the new widget
+   * @returns A new widget instance
+   */
+  createWidget(type: string, id: string): any {
+    console.log(`[WidgetPluginSystem] Creating widget of type '${type}' with id '${id}'`);
+    // First check if this is an external widget
+    const widgetDefinition = this.getWidgetDefinition(type);
+    if (!widgetDefinition) {
+      console.error(`[WidgetPluginSystem] Widget type ${type} not found, falling back to text widget`);
+      return createBuiltInWidget('text', id); // Fallback to text widget
+    }
+    
+    console.log(`[WidgetPluginSystem] Found widget definition:`, widgetDefinition);
+    console.log(`[WidgetPluginSystem] Widget is ${widgetDefinition.isRemote ? 'remote' : 'built-in'}`);
+    
+    const widget = {
+      id,
+      type,
+      title: widgetDefinition.name,
+      properties: { ...widgetDefinition.defaultProperties },
+    };
+    
+    console.log(`[WidgetPluginSystem] Created widget instance:`, widget);
+
+    // If it's a container, add empty children layout
+    if (widgetDefinition.isContainer) {
+      return {
+        ...widget,
+        children: {
+          layout: {
+            layouts: [],
+            settings: {
+              cols: 12,
+              rowHeight: 30,
+              containerPadding: [10, 10],
+              margin: [10, 10],
+            },
+          },
+        },
+      };
+    }
+
+    return widget;
   }
 
   /**
@@ -185,17 +249,22 @@ class WidgetPluginSystem {
    * @returns True if widget definition is valid
    */
   private validateWidgetDefinition(widget: WidgetDefinition): boolean {
+    console.log(`[WidgetPluginSystem] Validating widget definition:`, widget);
+    
     // Check required properties
     if (!widget.type || !widget.name || !widget.component) {
+      console.error(`[WidgetPluginSystem] Widget validation failed: missing required properties`);
       return false;
     }
 
-    // Check for type conflicts with built-in widgets
-    if (Object.keys(WIDGET_REGISTRY).includes(widget.type)) {
-      console.warn(`Widget type ${widget.type} conflicts with a built-in widget`);
+    // For remote widgets, we'll allow them even if they conflict with built-in widgets
+    // This allows overriding built-in widgets with remote versions
+    if (Object.keys(WIDGET_REGISTRY).includes(widget.type) && !widget.isRemote) {
+      console.warn(`[WidgetPluginSystem] Widget type ${widget.type} conflicts with a built-in widget`);
       return false;
     }
 
+    console.log(`[WidgetPluginSystem] Widget validation successful for ${widget.type}`);
     return true;
   }
 
@@ -243,6 +312,56 @@ class WidgetPluginSystem {
       console.error('Failed to load remote widget URLs:', error);
       this.remoteWidgetUrls = {};
     }
+  }
+
+  /**
+   * Get all registered remote widget URLs
+   * @returns Record of widget types to their remote URLs
+   */
+  getRemoteWidgetUrls(): Record<string, string> {
+    return { ...this.remoteWidgetUrls };
+  }
+
+  /**
+   * Refresh a remote widget by re-fetching its manifest and updating its definition
+   * @param widgetType The type of widget to refresh
+   * @returns A promise that resolves to true if the widget was refreshed successfully
+   */
+  async refreshRemoteWidget(widgetType: string): Promise<boolean> {
+    try {
+      // Check if we have a URL for this widget type
+      const url = this.remoteWidgetUrls[widgetType];
+      if (!url) {
+        console.error(`[WidgetPluginSystem] No URL found for widget type ${widgetType}`);
+        return false;
+      }
+
+      console.log(`[WidgetPluginSystem] Refreshing widget ${widgetType} from ${url}`);
+      
+      // Re-register the widget with the same URL
+      return await this.registerRemoteWidget(url);
+    } catch (error) {
+      console.error(`[WidgetPluginSystem] Error refreshing widget ${widgetType}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Refresh all registered remote widgets
+   * @returns A promise that resolves to an object with the results of each refresh operation
+   */
+  async refreshAllRemoteWidgets(): Promise<Record<string, boolean>> {
+    const results: Record<string, boolean> = {};
+    
+    // Get all widget types with remote URLs
+    const widgetTypes = Object.keys(this.remoteWidgetUrls);
+    
+    // Refresh each widget
+    for (const widgetType of widgetTypes) {
+      results[widgetType] = await this.refreshRemoteWidget(widgetType);
+    }
+    
+    return results;
   }
 
   // Instance methods and properties are defined above

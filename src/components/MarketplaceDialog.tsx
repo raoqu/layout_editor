@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
-import { Modal, Tabs, Form, Input, Button, message, Divider, Typography, Space } from 'antd';
-import { CloudOutlined, CloudUploadOutlined, AppstoreOutlined, CodeOutlined } from '@ant-design/icons';
+import React, { useState, useContext, useEffect } from 'react';
+import { Modal, Tabs, Form, Input, Button, message, Divider, Typography, Space, Table, Tooltip } from 'antd';
+import { CloudOutlined, CloudUploadOutlined, AppstoreOutlined, CodeOutlined, ReloadOutlined } from '@ant-design/icons';
 import WidgetMarketplace from '../marketplace/WidgetMarketplace';
 import WidgetPluginSystem from '../marketplace/WidgetPluginSystem';
 import { DashboardContext } from '../contexts/DashboardContext';
@@ -24,6 +24,66 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
 
   const [remoteUrl, setRemoteUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remoteUrls, setRemoteUrls] = useState<Record<string, string>>({});
+  const [refreshing, setRefreshing] = useState<Record<string, boolean>>({});
+  
+  // Load remote widget URLs when the dialog opens
+  useEffect(() => {
+    if (open) {
+      loadRemoteWidgetUrls();
+    }
+  }, [open]);
+  
+  // Load remote widget URLs from the WidgetPluginSystem
+  const loadRemoteWidgetUrls = () => {
+    const urls = WidgetPluginSystem.getRemoteWidgetUrls();
+    setRemoteUrls(urls);
+    console.log('Loaded remote widget URLs:', urls);
+  };
+
+  // Handle refreshing a specific remote widget
+  const handleRefreshWidget = async (widgetType: string) => {
+    setRefreshing(prev => ({ ...prev, [widgetType]: true }));
+    try {
+      const success = await WidgetPluginSystem.refreshRemoteWidget(widgetType);
+      if (success) {
+        message.success(`Widget ${widgetType} refreshed successfully`);
+        if (refreshWidgets) refreshWidgets();
+        if (onWidgetInstalled) onWidgetInstalled();
+      } else {
+        message.error(`Failed to refresh widget ${widgetType}`);
+      }
+    } catch (error) {
+      console.error(`Error refreshing widget:`, error);
+      message.error(`Error refreshing widget: ${error}`);
+    } finally {
+      setRefreshing(prev => ({ ...prev, [widgetType]: false }));
+    }
+  };
+
+  // Handle refreshing all remote widgets
+  const handleRefreshAll = async () => {
+    setLoading(true);
+    try {
+      const results = await WidgetPluginSystem.refreshAllRemoteWidgets();
+      const successCount = Object.values(results).filter(Boolean).length;
+      const totalCount = Object.keys(results).length;
+      
+      if (successCount === totalCount) {
+        message.success(`All ${totalCount} widgets refreshed successfully`);
+      } else {
+        message.warning(`${successCount} of ${totalCount} widgets refreshed successfully`);
+      }
+      
+      if (refreshWidgets) refreshWidgets();
+      if (onWidgetInstalled) onWidgetInstalled();
+    } catch (error) {
+      console.error(`Error refreshing widgets:`, error);
+      message.error(`Error refreshing widgets: ${error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRegisterRemoteWidget = async () => {
     if (!remoteUrl) {
@@ -37,6 +97,7 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
       if (success) {
         message.success('Remote widget registered successfully!');
         setRemoteUrl('');
+        loadRemoteWidgetUrls(); // Reload the remote widget URLs
         if (refreshWidgets) refreshWidgets();
         if (onWidgetInstalled) onWidgetInstalled();
       } else {
@@ -83,13 +144,24 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
             ),
             children: (
               <div>
-                <Typography.Title level={5}>Register Remote Widget</Typography.Title>
-                <Text type="secondary">
-                  Register a remote widget by providing the URL to the widget server.
-                  The server must expose a manifest.json file and the widget components.
-                </Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <div>
+                    <Typography.Title level={5}>Register Remote Widget</Typography.Title>
+                    <Text type="secondary">
+                      Register a remote widget by providing the URL to the widget server.
+                      The server must expose a manifest.json file and the widget components.
+                    </Text>
+                  </div>
+                  <Button 
+                    icon={<ReloadOutlined />} 
+                    onClick={handleRefreshAll}
+                    loading={loading}
+                  >
+                    Refresh All
+                  </Button>
+                </div>
                 
-                <Form layout="inline" style={{ marginTop: 16 }}>
+                <Form layout="inline" style={{ marginTop: 16, marginBottom: 24 }}>
                   <Form.Item style={{ flex: 1 }}>
                     <Input 
                       placeholder="Enter remote widget URL (e.g., http://localhost:5173)" 
@@ -110,6 +182,51 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
                   </Form.Item>
                 </Form>
                 
+                <Divider orientation="left">Registered Remote Widgets</Divider>
+                
+                {/* Table of registered remote widget URLs */}
+                <Table 
+                  dataSource={Object.entries(remoteUrls).map(([type, url]) => ({
+                    key: type,
+                    type,
+                    url
+                  }))}
+                  columns={[
+                    {
+                      title: 'Widget Type',
+                      dataIndex: 'type',
+                      key: 'type',
+                    },
+                    {
+                      title: 'Remote URL',
+                      dataIndex: 'url',
+                      key: 'url',
+                      ellipsis: true,
+                    },
+                    {
+                      title: 'Actions',
+                      key: 'actions',
+                      render: (_: any, record: { type: string, url: string }) => (
+                        <Space>
+                          <Tooltip title="Refresh widget from source">
+                            <Button
+                              icon={<ReloadOutlined />}
+                              onClick={() => handleRefreshWidget(record.type)}
+                              loading={refreshing[record.type]}
+                              size="small"
+                            >
+                              Refresh
+                            </Button>
+                          </Tooltip>
+                        </Space>
+                      ),
+                    },
+                  ]}
+                  pagination={false}
+                  locale={{ emptyText: 'No remote widget sources registered' }}
+                  size="small"
+                />
+                
                 <Divider orientation="left">How It Works</Divider>
                 
                 <Space direction="vertical">
@@ -117,6 +234,7 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
                   <Text>2. Host it on a web server accessible to the dashboard</Text>
                   <Text>3. Register it using the URL to the server</Text>
                   <Text>4. The widget will be available in the dashboard</Text>
+                  <Text>5. Use the refresh button to update widgets when new versions are available</Text>
                 </Space>
               </div>
             )
