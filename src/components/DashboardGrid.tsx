@@ -162,6 +162,7 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
       >
         {layout.layouts.map((item) => {
           console.log(`[DashboardGrid] Rendering widget: ${item.widget.type} (ID: ${item.i})`);
+          // Use widgetPluginSystem to get widget definition - this ensures remote widgets are found
           const widgetDef = widgetPluginSystem.getWidgetDefinition(item.widget.type);
           
           // Skip rendering if widget definition is not found
@@ -181,30 +182,34 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
           console.log(`[DashboardGrid] Widget definition:`, widgetDef);
           const WidgetComponent = widgetDef.component;
           console.log(`[DashboardGrid] Widget component:`, WidgetComponent);
+          const isRemoteWidget = widgetDef.isRemote === true;
           
           return (
             <div 
               key={item.i} 
               onClick={(e) => handleWidgetSelect(item.i, e)}
-              className={`widget-container ${selectedWidgetId === item.i ? 'selected' : ''}`}
+              className={`widget-container ${selectedWidgetId === item.i ? 'selected' : ''} ${isRemoteWidget ? 'remote-widget' : ''}`}
               style={{ 
                 overflow: 'hidden',
                 position: 'relative'
               }}
+              data-widget-type={item.widget.type}
+              data-is-remote={isRemoteWidget ? 'true' : 'false'}
             >
-              <div className="widget-content">
+              <div className="widget-content" style={{ height: '100%', width: '100%' }}>
                 {(() => {
                   console.log(`[DashboardGrid] Rendering widget component for ${item.widget.type}`);
                   console.log(`[DashboardGrid] Widget props:`, {
                     id: item.widget.id,
                     type: item.widget.type,
-                    properties: item.widget.properties
+                    properties: item.widget.properties,
+                    isRemote: isRemoteWidget
                   });
                   return null;
                 })()}
                 
-                {/* Render all widgets with Suspense, qiankun will handle remote widgets */}
-                <React.Suspense fallback={
+                {/* Key with item.i to ensure proper remounting when widget changes */}
+                <React.Suspense key={`widget-${item.i}`} fallback={
                   <div style={{ padding: '20px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div>Loading {item.widget.type} widget...</div>
                   </div>

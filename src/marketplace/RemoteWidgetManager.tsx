@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Input, Form, Modal, message, Space, Typography, Tooltip } from 'antd';
-import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import WidgetPluginSystem from './WidgetPluginSystem';
 
 const { Title, Text } = Typography;
@@ -14,8 +14,10 @@ const RemoteWidgetManager: React.FC<RemoteWidgetManagerProps> = ({ onWidgetUpdat
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState<Record<string, boolean>>({});
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isClearAllModalVisible, setIsClearAllModalVisible] = useState(false);
   const [newWidgetUrl, setNewWidgetUrl] = useState('');
   const [addingWidget, setAddingWidget] = useState(false);
+  const [clearingWidgets, setClearingWidgets] = useState(false);
 
   // Load remote widget URLs on component mount
   useEffect(() => {
@@ -149,6 +151,27 @@ const RemoteWidgetManager: React.FC<RemoteWidgetManagerProps> = ({ onWidgetUpdat
       setLoading(false);
     }
   };
+  
+  const handleClearAllWidgets = async () => {
+    setClearingWidgets(true);
+    try {
+      const success = WidgetPluginSystem.clearAllRemoteWidgets();
+      if (success) {
+        message.success('All remote widgets cleared successfully');
+        setRemoteUrls({});
+        if (onWidgetUpdated) {
+          onWidgetUpdated();
+        }
+      } else {
+        message.error('Failed to clear remote widgets');
+      }
+    } catch (error) {
+      message.error(`Error clearing remote widgets: ${error}`);
+    } finally {
+      setClearingWidgets(false);
+      setIsClearAllModalVisible(false);
+    }
+  };
 
   const columns = [
     {
@@ -223,6 +246,14 @@ const RemoteWidgetManager: React.FC<RemoteWidgetManagerProps> = ({ onWidgetUpdat
           >
             Refresh All
           </Button>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => setIsClearAllModalVisible(true)}
+            disabled={Object.keys(remoteUrls).length === 0}
+          >
+            Clear All
+          </Button>
         </Space>
       </div>
 
@@ -288,6 +319,39 @@ const RemoteWidgetManager: React.FC<RemoteWidgetManagerProps> = ({ onWidgetUpdat
             />
           </Form.Item>
         </Form>
+      </Modal>
+      
+      {/* Confirmation Modal for Clear All */}
+      <Modal
+        title={
+          <span>
+            <ExclamationCircleOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
+            Clear All Remote Widgets
+          </span>
+        }
+        open={isClearAllModalVisible}
+        onCancel={() => setIsClearAllModalVisible(false)}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => setIsClearAllModalVisible(false)}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="clear"
+            danger
+            type="primary"
+            loading={clearingWidgets}
+            onClick={handleClearAllWidgets}
+          >
+            Clear All Widgets
+          </Button>,
+        ]}
+      >
+        <p>Are you sure you want to clear all registered remote widgets?</p>
+        <p>This action cannot be undone. You will need to re-register any widgets you want to use again.</p>
+        <p>Total widgets to be removed: <strong>{Object.keys(remoteUrls).length}</strong></p>
       </Modal>
     </div>
   );

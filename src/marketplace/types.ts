@@ -29,18 +29,28 @@ export interface MarketplaceWidgetInfo {
 }
 
 /**
+ * Single Widget definition within a remote manifest
+ */
+export interface RemoteWidgetDefinition {
+  type: string;
+  name: string;
+  description: string;
+  path: string; // Subpath for this widget, e.g., '/chart' or '/weather'
+  defaultSize?: [number, number];
+  defaultProperties?: Record<string, any>;
+  hasPropertyEditor?: boolean;
+  propertyEditorPath?: string; // Optional custom path for property editor
+}
+
+/**
  * Remote Widget Manifest definition
  * This is the format expected from remote widget servers
  */
 export interface RemoteWidgetManifest {
-  type: string;
-  name: string;
-  description: string;
   version: string;
+  entry?: string; // Optional global entry point for all widgets in the manifest
   author: string;
-  defaultSize?: [number, number];
-  defaultProperties?: Record<string, any>;
-  hasPropertyEditor?: boolean;
+  widgets: RemoteWidgetDefinition[];
 }
 
 export interface MarketplaceWidget extends MarketplaceWidgetMetadata {

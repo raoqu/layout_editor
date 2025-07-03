@@ -49,6 +49,8 @@ export interface WidgetDefinition {
   isContainer?: boolean;
   isRemote?: boolean;
   remoteUrl?: string;
+  remotePath?: string; // Subpath for the widget in the remote URL
+  propertyEditorPath?: string; // Optional custom path for property editor
 }
 
 // Props passed to widget components

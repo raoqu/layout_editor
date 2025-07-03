@@ -157,9 +157,6 @@ const DashboardDesigner: React.FC = () => {
         
         {dashboardState.editMode && selectedWidgetId && (
           <>
-            <span style={{ color: 'white', marginRight: 8 }}>
-              Selected: {dashboardState.layout.layouts.find(item => item.i === selectedWidgetId)?.widget.title}
-            </span>
             <Button
               type="primary"
               icon={<SettingOutlined />}

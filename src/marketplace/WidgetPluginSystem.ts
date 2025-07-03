@@ -136,61 +136,120 @@ class WidgetPluginSystem {
   }
 
   /**
+   * Normalize remote widget URL to ensure correct port
+   * This fixes issues with port mismatches between development and production
+   */
+  private normalizeRemoteUrl(url: string): string {
+    try {
+      // Parse the URL
+      const parsedUrl = new URL(url);
+      
+      // If URL is localhost:4173, change it to localhost:5180
+      // This is because Vite preview uses 4173 but our widget server uses 5180
+      if (parsedUrl.hostname === 'localhost' && parsedUrl.port === '4173') {
+        console.log(`[WidgetPluginSystem] Correcting port from 4173 to 5180 for ${url}`);
+        parsedUrl.port = '5180';
+      }
+      
+      return parsedUrl.toString();
+    } catch (error) {
+      console.error(`[WidgetPluginSystem] Error normalizing URL ${url}:`, error);
+      return url; // Return original URL if parsing fails
+    }
+  }
+
+  /**
    * Register a remote widget by URL
    * @param url The URL to the remote widget manifest
-   * @returns A promise that resolves to true if the widget was registered successfully
+   * @returns A promise that resolves to true if at least one widget was registered successfully
    */
   async registerRemoteWidget(url: string): Promise<boolean> {
     try {
-      console.log('[WidgetPluginSystem] Registering remote widget from URL:', url);
-      const response = await fetch(`${url}/manifest.json`);
+      // Normalize the URL to ensure correct port
+      const normalizedUrl = this.normalizeRemoteUrl(url);
+      console.log(`[WidgetPluginSystem] Registering remote widget from ${normalizedUrl} (original: ${url})`);
+      
+      // Dynamically import the components to avoid circular dependencies
+      const { default: MicroAppContainer } = await import('../components/widgets/MicroAppContainer');
+      const { default: MicroAppPropertyEditor } = await import('../components/widgets/MicroAppPropertyEditor');
+      
+      // Fetch the manifest file from the remote URL
+      const response = await fetch(`${normalizedUrl}/manifest.json`);
       if (!response.ok) {
-        console.error('[WidgetPluginSystem] Failed to fetch manifest:', response.statusText);
         throw new Error(`Failed to fetch widget manifest: ${response.statusText}`);
       }
       const manifest: RemoteWidgetManifest = await response.json();
-      console.log('[WidgetPluginSystem] Loaded manifest:', manifest);
-      if (!manifest.type || !manifest.name || !manifest.version) {
-        throw new Error('Invalid widget manifest: missing required fields');
+      
+      // Validate the manifest
+      if (!manifest.version || !manifest.author || !Array.isArray(manifest.widgets) || manifest.widgets.length === 0) {
+        throw new Error('Invalid widget manifest: missing required fields or no widgets defined');
       }
       
-      // Import the MicroAppContainer and MicroAppPropertyEditor for qiankun integration
-      const MicroAppContainer = (await import('../components/widgets/MicroAppContainer')).default;
-      const MicroAppPropertyEditor = (await import('../components/widgets/MicroAppPropertyEditor')).default;
+      // Get the global entry point if specified in the manifest
+      const globalEntry = manifest.entry;
       
-      const widgetDefinition: WidgetDefinition = {
-        type: manifest.type,
-        name: manifest.name,
-        icon: React.createElement('div', null, '📦'),
-        defaultSize: manifest.defaultSize || [4, 3],
-        defaultProperties: {
-          ...manifest.defaultProperties || {},
-          remoteUrl: url, // Store the remote URL in properties
-          title: manifest.name || 'Remote Widget',
-          description: manifest.description || 'This is a remote widget'
-        },
-        isRemote: true, // Mark this as a remote widget
-        remoteUrl: url, // Store the remote URL
-        // Use our MicroAppContainer for qiankun integration
-        component: MicroAppContainer,
-        // Use our MicroAppPropertyEditor
-        propertyEditor: MicroAppPropertyEditor
-      };
+      let registeredCount = 0;
+      
+      // Register each widget defined in the manifest
+      for (const widgetDef of manifest.widgets) {
+        // Validate the widget definition
+        if (!widgetDef.type || !widgetDef.name || !widgetDef.path) {
+          console.error('[WidgetPluginSystem] Invalid widget definition:', widgetDef);
+          continue;
+        }
+        
+        // Ensure the URL ends with a slash if needed and use the normalized URL
+        const baseUrl = normalizedUrl.endsWith('/') ? normalizedUrl : `${normalizedUrl}/`;
+        
+        // For qiankun, we need to make sure we're pointing to the correct entry file
+        // Instead of trying to load src/main.tsx, we should load the built widget-demo file
+        const widgetDefinition: WidgetDefinition = {
+          type: widgetDef.type,
+          name: widgetDef.name,
+          icon: React.createElement('div', null, '📦'),
+          defaultSize: widgetDef.defaultSize || [4, 3],
+          defaultProperties: {
+            ...widgetDef.defaultProperties || {},
+            remoteUrl: baseUrl, // Store the base remote URL in properties
+            remotePath: widgetDef.path, // Store the widget's specific path
+            propertyEditorPath: widgetDef.propertyEditorPath, // Store the property editor path
+            title: widgetDef.name || 'Remote Widget',
+            description: widgetDef.description || 'This is a remote widget',
+            // Add an entry property to specify the correct entry file
+            // Use the global entry from manifest if available, otherwise use default widget-demo.umd.js
+            entry: globalEntry ? `${baseUrl}${globalEntry}` : `${baseUrl}widget-demo.umd.js`
+          },
+          isRemote: true, // Mark this as a remote widget
+          remoteUrl: baseUrl, // Store the base remote URL
+          remotePath: widgetDef.path, // Store the widget's specific path
+          propertyEditorPath: widgetDef.propertyEditorPath, // Store the property editor path if specified
+          // Use our MicroAppContainer for qiankun integration
+          component: MicroAppContainer,
+          // Use our MicroAppPropertyEditor
+          propertyEditor: MicroAppPropertyEditor
+        };
 
-      // Validate and register the widget
-      if (this.validateWidgetDefinition(widgetDefinition)) {
-        console.log('[WidgetPluginSystem] Registering remote widget:', widgetDefinition);
-        const registered = this.registerWidget(widgetDefinition);
-        if (registered) {
-          // Store the remote URL for this widget type
-          this.remoteWidgetUrls[manifest.type] = url;
-          this.saveRemoteWidgetUrls();
-          return true;
+        // Validate and register the widget
+        if (this.validateWidgetDefinition(widgetDefinition)) {
+          console.log('[WidgetPluginSystem] Registering remote widget:', widgetDefinition);
+          const registered = this.registerWidget(widgetDefinition);
+          if (registered) {
+            // Store the remote URL for this widget type
+            this.remoteWidgetUrls[widgetDef.type] = url;
+            registeredCount++;
+          }
         }
       }
+      
+      // Save the remote widget URLs if any widgets were registered
+      if (registeredCount > 0) {
+        this.saveRemoteWidgetUrls();
+        return true;
+      }
+      
       return false;
     } catch (error) {
-      console.error('[WidgetPluginSystem] Error registering remote widget:', error);
+      console.error('[WidgetPluginSystem] Error registering remote widgets:', error);
       return false;
     }
   }
@@ -249,8 +308,6 @@ class WidgetPluginSystem {
    * @returns True if widget definition is valid
    */
   private validateWidgetDefinition(widget: WidgetDefinition): boolean {
-    console.log(`[WidgetPluginSystem] Validating widget definition:`, widget);
-    
     // Check required properties
     if (!widget.type || !widget.name || !widget.component) {
       console.error(`[WidgetPluginSystem] Widget validation failed: missing required properties`);
@@ -264,8 +321,37 @@ class WidgetPluginSystem {
       return false;
     }
 
-    console.log(`[WidgetPluginSystem] Widget validation successful for ${widget.type}`);
     return true;
+  }
+
+  /**
+   * Clear all registered remote widgets
+   * @returns True if successful
+   */
+  clearAllRemoteWidgets(): boolean {
+    try {
+      console.log('[WidgetPluginSystem] Clearing all remote widgets');
+      
+      // Get all remote widget types
+      const remoteWidgetTypes = Object.keys(this.remoteWidgetUrls);
+      
+      // Remove each remote widget from the registry
+      remoteWidgetTypes.forEach(type => {
+        delete WIDGET_REGISTRY[type];
+      });
+      
+      // Clear the remote widget URLs
+      this.remoteWidgetUrls = {};
+      
+      // Save the empty remote widget URLs to localStorage
+      this.saveRemoteWidgetUrls();
+      
+      console.log('[WidgetPluginSystem] All remote widgets cleared');
+      return true;
+    } catch (error) {
+      console.error('[WidgetPluginSystem] Error clearing remote widgets:', error);
+      return false;
+    }
   }
 
   /**

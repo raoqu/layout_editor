@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Modal, Tabs, Form, Input, Button, message, Divider, Typography, Space, Table, Tooltip } from 'antd';
-import { CloudOutlined, CloudUploadOutlined, AppstoreOutlined, CodeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Modal, Tabs, Form, Input, Button, message, Divider, Typography, Space, Table, Tooltip, Popconfirm } from 'antd';
+import { CloudOutlined, CloudUploadOutlined, AppstoreOutlined, CodeOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import WidgetMarketplace from '../marketplace/WidgetMarketplace';
 import WidgetPluginSystem from '../marketplace/WidgetPluginSystem';
 import { DashboardContext } from '../contexts/DashboardContext';
@@ -24,6 +24,7 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
 
   const [remoteUrl, setRemoteUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [clearingWidgets, setClearingWidgets] = useState(false);
   const [remoteUrls, setRemoteUrls] = useState<Record<string, string>>({});
   const [refreshing, setRefreshing] = useState<Record<string, boolean>>({});
   
@@ -82,6 +83,29 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
       message.error(`Error refreshing widgets: ${error}`);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Handle clearing all remote widgets
+  const handleClearAllWidgets = async () => {
+    setClearingWidgets(true);
+    try {
+      const success = WidgetPluginSystem.clearAllRemoteWidgets();
+      if (success) {
+        message.success('All remote widgets cleared successfully');
+        // Update the local state
+        setRemoteUrls({});
+        // Refresh the dashboard widgets
+        if (refreshWidgets) refreshWidgets();
+        if (onWidgetInstalled) onWidgetInstalled();
+      } else {
+        message.error('Failed to clear remote widgets');
+      }
+    } catch (error) {
+      console.error(`Error clearing remote widgets:`, error);
+      message.error(`Error clearing remote widgets: ${error}`);
+    } finally {
+      setClearingWidgets(false);
     }
   };
 
@@ -152,13 +176,31 @@ const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, on
                       The server must expose a manifest.json file and the widget components.
                     </Text>
                   </div>
-                  <Button 
-                    icon={<ReloadOutlined />} 
-                    onClick={handleRefreshAll}
-                    loading={loading}
-                  >
-                    Refresh All
-                  </Button>
+                  <Space>
+                    <Button 
+                      icon={<ReloadOutlined />} 
+                      onClick={handleRefreshAll}
+                      loading={loading}
+                    >
+                      Refresh All
+                    </Button>
+                    <Popconfirm
+                      title="Clear all remote widgets"
+                      description="Are you sure you want to clear all registered remote widgets? This cannot be undone."
+                      onConfirm={handleClearAllWidgets}
+                      okText="Yes, Clear All"
+                      cancelText="No"
+                      okButtonProps={{ danger: true, loading: clearingWidgets }}
+                    >
+                      <Button 
+                        danger
+                        icon={<DeleteOutlined />}
+                        disabled={Object.keys(remoteUrls).length === 0}
+                      >
+                        Clear All
+                      </Button>
+                    </Popconfirm>
+                  </Space>
                 </div>
                 
                 <Form layout="inline" style={{ marginTop: 16, marginBottom: 24 }}>

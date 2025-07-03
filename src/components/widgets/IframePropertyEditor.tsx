@@ -1,7 +1,7 @@
 import React from 'react';
 import { Form, Input, ColorPicker } from 'antd';
 import type { WidgetPropertyEditorProps } from '../../types';
-import { Color } from 'antd/es/color-picker';
+import type { Color } from 'antd/es/color-picker';
 
 const { TextArea } = Input;
 

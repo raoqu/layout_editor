@@ -33,9 +33,14 @@ const initialDashboardState: DashboardState = {
   selectedWidgetId: null,
 };
 
-export const DashboardContext = createContext<DashboardContextProps>({} as DashboardContextProps);
+// Create the context with a default value
+const DashboardContextValue = createContext<DashboardContextProps>({} as DashboardContextProps);
 
-export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Use a separate variable name for the context to avoid Fast Refresh issues
+export { DashboardContextValue as DashboardContext };
+
+// Define the provider as a named function component for Fast Refresh compatibility
+function DashboardProviderComponent({ children }: { children: React.ReactNode }) {
   const [dashboardState, setDashboardState] = useState<DashboardState>(initialDashboardState);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
 
@@ -273,7 +278,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   return (
-    <DashboardContext.Provider
+    <DashboardContextValue.Provider
       value={{
         dashboardState,
         selectedWidgetId,
@@ -290,6 +295,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }}
     >
       {children}
-    </DashboardContext.Provider>
+    </DashboardContextValue.Provider>
   );
-};
+}
+
+// Export the provider component
+export const DashboardProvider = DashboardProviderComponent;
