@@ -34,7 +34,7 @@ const MarketplaceButton: React.FC = () => {
       </Tooltip>
       
       <MarketplaceDialog 
-        visible={marketplaceVisible} 
+        open={marketplaceVisible} 
         onClose={closeMarketplace} 
       />
     </>

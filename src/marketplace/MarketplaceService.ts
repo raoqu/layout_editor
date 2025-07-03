@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { MarketplaceResponse, MarketplaceWidget, MarketplaceService, WidgetFilters } from './types';
 import type { WidgetDefinition } from '../types';
 import { CloudOutlined, ClockCircleOutlined, StockOutlined, BulbOutlined, BarChartOutlined } from '@ant-design/icons';
-import widgetPluginSystem from './WidgetPluginSystem';
+import WidgetPluginSystem from './WidgetPluginSystem';
 
 /**
  * Mock implementation of the MarketplaceService for development
@@ -224,13 +224,19 @@ export class MockMarketplaceService implements MarketplaceService {
       // In a real implementation, this would download and install the widget
       console.log(`Installing widget: ${widget.name}`);
       
-      // Register the widget with the plugin system
-      if (widget.widgetDefinition) {
-        const success = widgetPluginSystem.registerWidget(widget.widgetDefinition);
-        if (success) {
-          // Install the widget (make it available in the dashboard)
-          widgetPluginSystem.installWidget(widget.widgetDefinition.type);
-          console.log(`Widget ${widget.name} installed successfully`);
+      // Use the plugin system to register and install the widget
+      const pluginSystem = WidgetPluginSystem;
+      const registered = pluginSystem.registerWidget(widget.widgetDefinition);
+      
+      if (registered) {
+        const installed = pluginSystem.installWidget(widget.widgetDefinition.type);
+        
+        if (installed) {
+          // Mark as installed in our mock data
+          const index = this.mockWidgets.findIndex(w => w.id === id);
+          if (index !== -1) {
+            this.mockWidgets[index].isInstalled = true;
+          }
           return true;
         }
       }

@@ -1,16 +1,16 @@
 import React, { useState, useContext } from 'react';
-import { Modal, Tabs, Button } from 'antd';
-import { AppstoreAddOutlined } from '@ant-design/icons';
+import { Modal, Tabs, Form, Input, Button, message, Divider, Typography, Space } from 'antd';
+import { CloudOutlined, CloudUploadOutlined, AppstoreOutlined, CodeOutlined } from '@ant-design/icons';
 import WidgetMarketplace from '../marketplace/WidgetMarketplace';
+import WidgetPluginSystem from '../marketplace/WidgetPluginSystem';
 import { DashboardContext } from '../contexts/DashboardContext';
-// Import will be used in future implementation
-// import widgetPluginSystem from '../marketplace/WidgetPluginSystem';
 
-const { TabPane } = Tabs;
+const { Text } = Typography;
 
 interface MarketplaceDialogProps {
-  visible: boolean;
+  open: boolean;
   onClose: () => void;
+  onWidgetInstalled?: () => void;
 }
 
 /**
@@ -19,75 +19,165 @@ interface MarketplaceDialogProps {
  * Displays a modal dialog with the widget marketplace, allowing users to browse,
  * search, and install widgets from the marketplace.
  */
-const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ visible, onClose }) => {
-  const [activeTab, setActiveTab] = useState('browse');
+const MarketplaceDialog: React.FC<MarketplaceDialogProps> = ({ open, onClose, onWidgetInstalled }) => {
   const { refreshWidgets } = useContext(DashboardContext);
-  
-  // When a widget is installed, refresh the widget registry
-  const handleWidgetInstalled = () => {
-    // Refresh available widgets in the dashboard
-    if (refreshWidgets) {
-      refreshWidgets();
+
+  const [remoteUrl, setRemoteUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleRegisterRemoteWidget = async () => {
+    if (!remoteUrl) {
+      message.error('Please enter a remote widget URL');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const success = await WidgetPluginSystem.registerRemoteWidget(remoteUrl);
+      if (success) {
+        message.success('Remote widget registered successfully!');
+        setRemoteUrl('');
+        if (refreshWidgets) refreshWidgets();
+        if (onWidgetInstalled) onWidgetInstalled();
+      } else {
+        message.error('Failed to register remote widget');
+      }
+    } catch (error) {
+      console.error('Error registering remote widget:', error);
+      message.error('Error registering remote widget');
+    } finally {
+      setLoading(false);
     }
   };
-  
+
   return (
     <Modal
       title="Widget Marketplace"
-      open={visible}
+      open={open}
       onCancel={onClose}
-      width={1000}
-      footer={[
-        <Button key="close" onClick={onClose}>
-          Close
-        </Button>
-      ]}
-      destroyOnClose
+      width={800}
+      footer={null}
     >
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab="Browse Widgets" key="browse">
-          <WidgetMarketplace onWidgetInstalled={handleWidgetInstalled} />
-        </TabPane>
-        <TabPane tab="Installed Widgets" key="installed">
-          <div className="installed-widgets">
-            <h3>Installed External Widgets</h3>
-            <p>
-              This tab shows all external widgets that you have installed from the marketplace.
-              You can manage them here or uninstall them if needed.
-            </p>
-            {/* We'll implement this in a future update */}
-            <div className="coming-soon">
-              <AppstoreAddOutlined style={{ fontSize: '48px', color: '#ccc' }} />
-              <p>Widget management coming soon!</p>
-            </div>
-          </div>
-        </TabPane>
-        <TabPane tab="Develop" key="develop">
-          <div className="widget-development">
-            <h3>Widget Development</h3>
-            <p>
-              Want to create your own custom widgets? This section provides resources
-              and documentation to help you get started with widget development.
-            </p>
-            <h4>Getting Started</h4>
-            <ol>
-              <li>Use the Example Widget Template as a starting point</li>
-              <li>Implement your widget component and property editor</li>
-              <li>Test your widget locally</li>
-              <li>Package and publish your widget</li>
-            </ol>
-            <p>
-              Check out our documentation for more detailed instructions on creating
-              custom widgets for the Dash Designer marketplace.
-            </p>
-            {/* We'll implement this in a future update */}
-            <div className="coming-soon">
-              <AppstoreAddOutlined style={{ fontSize: '48px', color: '#ccc' }} />
-              <p>Developer tools coming soon!</p>
-            </div>
-          </div>
-        </TabPane>
-      </Tabs>
+      <Tabs
+        defaultActiveKey="browse"
+        items={[
+          {
+            key: 'browse',
+            label: (
+              <span>
+                <AppstoreOutlined /> Browse Widgets
+              </span>
+            ),
+            children: <WidgetMarketplace onWidgetInstalled={() => {
+              message.success('Widget installed successfully!');
+              if (refreshWidgets) refreshWidgets();
+              if (onWidgetInstalled) onWidgetInstalled();
+            }} />
+          },
+          {
+            key: 'remote',
+            label: (
+              <span>
+                <CloudOutlined /> Remote Widgets
+              </span>
+            ),
+            children: (
+              <div>
+                <Typography.Title level={5}>Register Remote Widget</Typography.Title>
+                <Text type="secondary">
+                  Register a remote widget by providing the URL to the widget server.
+                  The server must expose a manifest.json file and the widget components.
+                </Text>
+                
+                <Form layout="inline" style={{ marginTop: 16 }}>
+                  <Form.Item style={{ flex: 1 }}>
+                    <Input 
+                      placeholder="Enter remote widget URL (e.g., http://localhost:5173)" 
+                      value={remoteUrl}
+                      onChange={(e) => setRemoteUrl(e.target.value)}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button 
+                      type="primary" 
+                      icon={<CloudUploadOutlined />} 
+                      onClick={handleRegisterRemoteWidget}
+                      loading={loading}
+                    >
+                      Register
+                    </Button>
+                  </Form.Item>
+                </Form>
+                
+                <Divider orientation="left">How It Works</Divider>
+                
+                <Space direction="vertical">
+                  <Text>1. Build your remote widget with the required structure</Text>
+                  <Text>2. Host it on a web server accessible to the dashboard</Text>
+                  <Text>3. Register it using the URL to the server</Text>
+                  <Text>4. The widget will be available in the dashboard</Text>
+                </Space>
+              </div>
+            )
+          },
+          {
+            key: 'installed',
+            label: (
+              <span>
+                <CloudUploadOutlined /> Installed Widgets
+              </span>
+            ),
+            children: (
+              <div className="installed-widgets">
+                <h3>Installed External Widgets</h3>
+                <p>
+                  This tab shows all external widgets that you have installed from the marketplace.
+                  You can manage them here or uninstall them if needed.
+                </p>
+                {/* We'll implement this in a future update */}
+                <div className="coming-soon">
+                  <AppstoreOutlined style={{ fontSize: '48px', color: '#ccc' }} />
+                  <p>Widget management coming soon!</p>
+                </div>
+              </div>
+            )
+          },
+          {
+            key: 'developer',
+            label: (
+              <span>
+                <CodeOutlined /> Developer Resources
+              </span>
+            ),
+            children: (
+              <div className="widget-development">
+                <h3>Widget Development</h3>
+                <p>
+                  Want to create your own custom widgets? This section provides resources
+                  and documentation to help you get started with widget development.
+                </p>
+                <h4>Getting Started</h4>
+                <ol>
+                  <li>Use the Example Widget Template as a starting point</li>
+                  <li>Implement your widget component and property editor</li>
+                  <li>Test your widget locally</li>
+                  <li>Package and publish your widget</li>
+                </ol>
+                <p>
+                  Check out our documentation for more detailed instructions on creating
+                  custom widgets for the Dash Designer marketplace.
+                </p>
+                {/* We'll implement this in a future update */}
+                <div className="coming-soon">
+                  <AppstoreOutlined style={{ fontSize: '48px', color: '#ccc' }} />
+                  <p>Developer tools coming soon!</p>
+                </div>
+              </div>
+            )
+          }
+        ]}
+      />
     </Modal>
   );
 };

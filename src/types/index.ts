@@ -44,6 +44,8 @@ export interface WidgetDefinition {
   component: React.ComponentType<WidgetComponentProps>;
   propertyEditor?: React.ComponentType<WidgetPropertyEditorProps>;
   isContainer?: boolean;
+  isRemote?: boolean;
+  remoteUrl?: string;
 }
 
 // Props passed to widget components

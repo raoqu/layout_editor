@@ -1,4 +1,6 @@
+import React from 'react';
 import type { WidgetDefinition } from '../types';
+import type { RemoteWidgetManifest } from './types';
 import WIDGET_REGISTRY from '../components/widgets/WidgetRegistry';
 import { getWidgetDefinition } from '../components/widgets/WidgetRegistry';
 
@@ -7,12 +9,26 @@ import { getWidgetDefinition } from '../components/widgets/WidgetRegistry';
  * Handles registration and management of external widgets
  */
 class WidgetPluginSystem {
-  private externalWidgets: Map<string, WidgetDefinition> = new Map();
+  private static instance: WidgetPluginSystem;
+  private externalWidgets: Record<string, WidgetDefinition> = {};
   private installedWidgets: string[] = [];
+  private remoteWidgetUrls: Record<string, string> = {};
 
-  constructor() {
-    // Load any previously installed widgets from localStorage
+  private constructor() {
+    // Load installed widgets from localStorage
     this.loadInstalledWidgets();
+    // Load remote widget URLs from localStorage
+    this.loadRemoteWidgetUrls();
+  }
+  
+  /**
+   * Get the singleton instance of the WidgetPluginSystem
+   */
+  public static getInstance(): WidgetPluginSystem {
+    if (!WidgetPluginSystem.instance) {
+      WidgetPluginSystem.instance = new WidgetPluginSystem();
+    }
+    return WidgetPluginSystem.instance;
   }
 
   /**
@@ -29,7 +45,7 @@ class WidgetPluginSystem {
       }
 
       // Add to external widgets map
-      this.externalWidgets.set(widget.type, widget);
+      this.externalWidgets[widget.type] = widget;
       console.log(`Widget ${widget.name} (${widget.type}) registered successfully`);
       return true;
     } catch (error) {
@@ -46,7 +62,7 @@ class WidgetPluginSystem {
   installWidget(widgetType: string): boolean {
     try {
       // Check if widget exists in external registry
-      if (!this.externalWidgets.has(widgetType)) {
+      if (!this.externalWidgets[widgetType]) {
         console.error(`Widget type ${widgetType} not found in external registry`);
         return false;
       }
@@ -94,8 +110,8 @@ class WidgetPluginSystem {
    */
   getWidgetDefinition(type: string): WidgetDefinition | undefined {
     // First check external widgets
-    if (this.externalWidgets.has(type)) {
-      return this.externalWidgets.get(type);
+    if (this.externalWidgets[type]) {
+      return this.externalWidgets[type];
     }
 
     // Fall back to built-in widgets
@@ -103,18 +119,64 @@ class WidgetPluginSystem {
   }
 
   /**
-   * Get all available widget definitions (both built-in and installed external)
-   * @returns Array of widget definitions
+   * Get all widget definitions, including both built-in and external widgets
    */
-  getAllWidgetDefinitions(): WidgetDefinition[] {
-    const builtInWidgets = Object.values(WIDGET_REGISTRY);
-    
-    // Get installed external widgets
-    const externalWidgets = this.installedWidgets
-      .map(type => this.externalWidgets.get(type))
-      .filter(widget => widget !== undefined) as WidgetDefinition[];
-    
-    return [...builtInWidgets, ...externalWidgets];
+  getAllWidgetDefinitions(): Record<string, WidgetDefinition> {
+    // In a real implementation, this would merge with built-in widgets
+    return this.externalWidgets;
+  }
+
+  /**
+   * Register a remote widget by URL
+   * @param url The URL to the remote widget manifest
+   * @returns A promise that resolves to true if the widget was registered successfully
+   */
+  async registerRemoteWidget(url: string): Promise<boolean> {
+    try {
+      // Fetch the widget manifest from the remote URL
+      const response = await fetch(`${url}/manifest.json`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch widget manifest: ${response.statusText}`);
+      }
+
+      const manifest: RemoteWidgetManifest = await response.json();
+
+      // Validate the manifest
+      if (!manifest.type || !manifest.name || !manifest.version) {
+        throw new Error('Invalid widget manifest: missing required fields');
+      }
+
+      // Create a widget definition from the manifest
+      const widgetDefinition: WidgetDefinition = {
+        type: manifest.type,
+        name: manifest.name,
+        // Use a dynamic import for the icon
+        icon: React.createElement('div', null, '📦'),
+        defaultSize: manifest.defaultSize || [4, 3],
+        defaultProperties: manifest.defaultProperties || {},
+        // Use dynamic imports for the component and property editor
+        component: React.lazy(() => import(/* @vite-ignore */ `${url}/widget.js`).then(module => ({ default: module.default }))),
+        propertyEditor: manifest.hasPropertyEditor ? 
+          React.lazy(() => import(/* @vite-ignore */ `${url}/property-editor.js`).then(module => ({ default: module.default }))) : 
+          undefined,
+        isRemote: true,
+        remoteUrl: url
+      };
+
+      // Register the widget
+      const success = this.registerWidget(widgetDefinition);
+
+      if (success) {
+        // Store the remote URL
+        this.remoteWidgetUrls[manifest.type] = url;
+        this.saveRemoteWidgetUrls();
+      }
+
+      return success;
+    } catch (error) {
+      console.error('Failed to register remote widget:', error);
+      return false;
+    }
   }
 
   /**
@@ -148,21 +210,43 @@ class WidgetPluginSystem {
     }
   }
 
+  private saveRemoteWidgetUrls(): void {
+    try {
+      localStorage.setItem('remoteWidgetUrls', JSON.stringify(this.remoteWidgetUrls));
+    } catch (error) {
+      console.error('Failed to save remote widget URLs:', error);
+    }
+  }
+
   /**
    * Load installed widgets from localStorage
    */
   private loadInstalledWidgets(): void {
     try {
-      const saved = localStorage.getItem('installedWidgets');
-      if (saved) {
-        this.installedWidgets = JSON.parse(saved);
+      const installedWidgetsJson = localStorage.getItem('installedWidgets');
+      if (installedWidgetsJson) {
+        this.installedWidgets = JSON.parse(installedWidgetsJson);
       }
     } catch (error) {
       console.error('Failed to load installed widgets:', error);
+      this.installedWidgets = [];
     }
   }
+
+  private loadRemoteWidgetUrls(): void {
+    try {
+      const remoteWidgetUrlsJson = localStorage.getItem('remoteWidgetUrls');
+      if (remoteWidgetUrlsJson) {
+        this.remoteWidgetUrls = JSON.parse(remoteWidgetUrlsJson);
+      }
+    } catch (error) {
+      console.error('Failed to load remote widget URLs:', error);
+      this.remoteWidgetUrls = {};
+    }
+  }
+
+  // Instance methods and properties are defined above
 }
 
-// Create singleton instance
-const widgetPluginSystem = new WidgetPluginSystem();
-export default widgetPluginSystem;
+// Export the singleton instance getter
+export default WidgetPluginSystem.getInstance();
