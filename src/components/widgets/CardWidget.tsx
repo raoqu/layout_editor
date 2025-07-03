@@ -1,58 +1,20 @@
-import React, { useState, useContext } from 'react';
-import { Card, Button, Dropdown } from 'antd';
-import { PlusOutlined, AppstoreOutlined } from '@ant-design/icons';
+import React from 'react';
+import { Card } from 'antd';
+import { AppstoreOutlined } from '@ant-design/icons';
 import './CardWidget.css';
 import type { WidgetComponentProps } from '../../types';
 import type { ContainerWidget } from '../../types';
 import DashboardGrid from '../DashboardGrid';
 import DashboardPreview from '../DashboardPreview';
-import { DashboardContext } from '../../contexts/DashboardContext';
-import widgetRegistry from './WidgetRegistry';
 
 const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelected }) => {
   const containerWidget = widget as ContainerWidget;
   const { title, bordered } = containerWidget.properties;
-  const { addWidget } = useContext(DashboardContext);
-  const [showToolbar, setShowToolbar] = useState(false);
-  
-  const handleAddWidget = (widgetType: string) => {
-    addWidget(widgetType, undefined, containerWidget.id);
-  };
-  
-  // Create menu items for each available widget type
-  const widgetMenuItems = Object.values(widgetRegistry).map(widgetDef => ({
-    key: widgetDef.type,
-    label: widgetDef.name,
-    icon: widgetDef.icon,
-    onClick: () => handleAddWidget(widgetDef.type)
-  }));
-
-  const titleContent = (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span>{title}</span>
-      {isEditing && (
-        <Dropdown 
-          menu={{ items: widgetMenuItems }} 
-          trigger={['click']}
-          onOpenChange={(open) => setShowToolbar(open)}
-        >
-          <Button 
-            type="text" 
-            size="small" 
-            icon={<PlusOutlined />}
-            className={showToolbar ? 'active-toolbar-btn' : ''}
-          >
-            Add Widget
-          </Button>
-        </Dropdown>
-      )}
-    </div>
-  );
 
   return (
     <Card
-      title={title ||  null}
-      headStyle={{ display: title || isEditing ? 'block' : 'none' }}
+      title={title || null}
+      headStyle={{ display: title ? 'block' : 'none' }}
       variant={bordered ? 'outlined' : 'borderless'}
       style={{ 
         height: '100%', 
@@ -62,7 +24,7 @@ const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelec
       styles={{
         body: { 
           padding: '8px', 
-          height: (title || isEditing) ? 'calc(100% - 57px)' : '100%',
+          height: title ? 'calc(100% - 57px)' : '100%',
           overflow: 'hidden',
         },
         header: {
@@ -74,7 +36,6 @@ const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelec
         <div 
           className="card-nested-grid"
           onMouseDown={(e) => {
-            // This prevents the card from being dragged when interacting with its contents
             e.stopPropagation();
           }}
         >
@@ -95,7 +56,7 @@ const CardWidget: React.FC<WidgetComponentProps> = ({ widget, isEditing, isSelec
           ) : isEditing ? (
             <div className="card-empty-state">
               <AppstoreOutlined className="card-empty-state-icon" />
-              <div className="card-empty-state-text">Click "Add Widget" to add content</div>
+              <div className="card-empty-state-text">Add widgets using the + button</div>
             </div>
           ) : null}
         </div>

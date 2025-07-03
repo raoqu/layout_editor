@@ -2,9 +2,11 @@ import React, { useContext, useState, useRef } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 // Import the CSS directly from node_modules
 import '../styles/grid-layout.css';
+import '../styles/widget-actions.css';
 import type { DashboardLayout, WidgetLayoutItem } from '../types';
-import { getWidgetDefinition } from './widgets/WidgetRegistry';
 import { DashboardContext } from '../contexts/DashboardContext';
+import { getWidgetDefinition } from './widgets/WidgetRegistry';
+import AddWidgetButton from './widgets/AddWidgetButton';
 import './DashboardGrid.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -222,7 +224,9 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
               </div>
               {isEditing && (
                 <div className="widget-overlay">
-                  <div className="widget-drag-area" />
+                  <div className="widget-drag-area" data-widget-type={item.widget.type} data-widget-id={item.i}>
+                    {item.widget.type === 'card' && <AddWidgetButton containerId={item.i} />}
+                  </div>
                   <div className="widget-resize-area" />
                 </div>
               )}

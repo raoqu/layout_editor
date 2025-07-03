@@ -1,0 +1,33 @@
+/* Widget action buttons in drag area */
+.widget-drag-area[data-widget-type="card"] .add-widget-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: rgba(24, 144, 255, 0.6);
+  border-left: 1px dashed rgba(255, 255, 255, 0.3);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 14px;
+  border-bottom-left-radius: 4px;
+  z-index: 15;
+  transition: background-color 0.2s;
+}
+
+.widget-drag-area[data-widget-type="card"] .add-widget-button:hover {
+  background-color: rgba(24, 144, 255, 0.8);
+}
+
+/* Dropdown menu for add widget */
+.add-widget-dropdown {
+  min-width: 150px;
+}
+
+.add-widget-dropdown .ant-dropdown-menu-item {
+  padding: 8px 12px;
+}

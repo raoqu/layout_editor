@@ -34,7 +34,9 @@ const DashboardDesigner: React.FC = () => {
   const [exportData, setExportData] = useState('');
 
   const handleAddWidget = (widgetType: string) => {
+    // Position is undefined to let the context determine the best bottom position
     addWidget(widgetType);
+    message.success(`Added ${widgetType} widget to bottom of layout`);
   };
 
   const handleRemoveWidget = () => {

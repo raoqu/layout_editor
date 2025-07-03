@@ -49,20 +49,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const widgetId = uuidv4();
     const newWidget = createWidget(widgetType, widgetId);
     
-    // Find a suitable position for the new widget
-    const x = position?.x ?? 0;
-    const y = position?.y ?? 0;
+    // Default widget dimensions
     const w = widgetType === 'card' ? 6 : widgetType === 'table' ? 6 : 4;
     const h = widgetType === 'card' ? 4 : widgetType === 'table' ? 4 : 3;
-
-    const newLayoutItem: WidgetLayoutItem = {
-      i: widgetId,
-      x,
-      y,
-      w,
-      h,
-      widget: newWidget,
-    };
 
     // If containerId is provided, add the widget to that container
     if (containerId) {
@@ -75,6 +64,25 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (containerItem) {
           const containerWidget = containerItem.widget as ContainerWidget;
           if (containerWidget.children && containerWidget.children.layout) {
+            // Find the bottom-most position in the container layout
+            let maxY = 0;
+            containerWidget.children.layout.layouts.forEach(item => {
+              const itemBottom = item.y + item.h;
+              if (itemBottom > maxY) {
+                maxY = itemBottom;
+              }
+            });
+
+            // Create new layout item positioned at the bottom
+            const newLayoutItem: WidgetLayoutItem = {
+              i: widgetId,
+              x: position?.x ?? 0, // Use provided position or default to 0
+              y: maxY, // Place at the bottom
+              w,
+              h,
+              widget: newWidget,
+            };
+            
             // Add the new widget to the container's layout
             containerWidget.children.layout.layouts.push(newLayoutItem);
           }
@@ -90,13 +98,34 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
     } else {
       // Add the widget to the main layout
-      setDashboardState((prevState) => ({
-        ...prevState,
-        layout: {
-          ...prevState.layout,
-          layouts: [...prevState.layout.layouts, newLayoutItem],
-        },
-      }));
+      setDashboardState((prevState) => {
+        // Find the bottom-most position in the main layout
+        let maxY = 0;
+        prevState.layout.layouts.forEach(item => {
+          const itemBottom = item.y + item.h;
+          if (itemBottom > maxY) {
+            maxY = itemBottom;
+          }
+        });
+
+        // Create new layout item positioned at the bottom
+        const newLayoutItem: WidgetLayoutItem = {
+          i: widgetId,
+          x: position?.x ?? 0, // Use provided position or default to 0
+          y: maxY, // Place at the bottom
+          w,
+          h,
+          widget: newWidget,
+        };
+
+        return {
+          ...prevState,
+          layout: {
+            ...prevState.layout,
+            layouts: [...prevState.layout.layouts, newLayoutItem],
+          },
+        };
+      });
     }
 
     setSelectedWidgetId(widgetId);
