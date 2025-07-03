@@ -122,8 +122,8 @@ class WidgetPluginSystem {
    * Get all widget definitions, including both built-in and external widgets
    */
   getAllWidgetDefinitions(): Record<string, WidgetDefinition> {
-    // In a real implementation, this would merge with built-in widgets
-    return this.externalWidgets;
+    // Merge built-in widgets with external widgets
+    return { ...WIDGET_REGISTRY, ...this.externalWidgets };
   }
 
   /**

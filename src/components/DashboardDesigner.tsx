@@ -10,7 +10,8 @@ import {
 } from '@ant-design/icons';
 import { DashboardContext } from '../contexts/DashboardContext';
 import DashboardGrid from './DashboardGrid';
-import WIDGET_REGISTRY, { getWidgetDefinition } from './widgets/WidgetRegistry';
+import { getWidgetDefinition } from './widgets/WidgetRegistry';
+import WidgetPluginSystem from '../marketplace/WidgetPluginSystem';
 import MarketplaceButton from './widgets/MarketplaceButton';
 
 const { Header, Sider, Content } = Layout;
@@ -219,7 +220,7 @@ const DashboardDesigner: React.FC = () => {
               <h3>Widgets</h3>
               <Menu 
                 mode="vertical"
-                items={Object.values(WIDGET_REGISTRY).map((widget) => ({
+                items={Object.values(WidgetPluginSystem.getAllWidgetDefinitions()).map((widget) => ({
                   key: widget.type,
                   icon: widget.icon,
                   label: widget.name,
