@@ -16,6 +16,7 @@ interface DashboardContextProps {
   updateNestedLayout: (parentId: string, newLayout: DashboardLayout) => void;
   exportDashboard: () => string;
   importDashboard: (jsonData: string) => void;
+  refreshWidgets: () => void; // Add method to refresh available widgets
 }
 
 const initialDashboardState: DashboardState = {
@@ -256,6 +257,18 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, []);
 
+  // Method to refresh widgets when new ones are installed from the marketplace
+  const refreshWidgets = useCallback(() => {
+    console.log('Refreshing available widgets');
+    // This would typically update any internal state related to available widgets
+    // For now, we'll just trigger a small state update to cause a re-render
+    setDashboardState(prevState => ({
+      ...prevState,
+      // Small update to trigger re-render without changing visible state
+      refreshTimestamp: Date.now()
+    }));
+  }, []);
+
   return (
     <DashboardContext.Provider
       value={{
@@ -270,6 +283,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateNestedLayout,
         exportDashboard,
         importDashboard,
+        refreshWidgets,
       }}
     >
       {children}

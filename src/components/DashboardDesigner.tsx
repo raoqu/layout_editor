@@ -11,6 +11,7 @@ import {
 import { DashboardContext } from '../contexts/DashboardContext';
 import DashboardGrid from './DashboardGrid';
 import WIDGET_REGISTRY, { getWidgetDefinition } from './widgets/WidgetRegistry';
+import MarketplaceButton from './widgets/MarketplaceButton';
 
 const { Header, Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -34,7 +35,37 @@ const DashboardDesigner: React.FC = () => {
   const [exportData, setExportData] = useState('');
 
   const handleAddWidget = (widgetType: string) => {
-    // Position is undefined to let the context determine the best bottom position
+    // Check if a card widget is currently selected
+    if (selectedWidgetId) {
+      // Find the selected widget in the layout
+      const findWidgetInLayout = (layouts: any[], widgetId: string): any => {
+        for (const item of layouts) {
+          if (item.i === widgetId) {
+            return { widget: item.widget, type: item.widget.type };
+          }
+          
+          // Check if this is a container widget with nested layouts
+          if (item.widget.children?.layout?.layouts) {
+            const nestedResult = findWidgetInLayout(item.widget.children.layout.layouts, widgetId);
+            if (nestedResult) {
+              return nestedResult;
+            }
+          }
+        }
+        return null;
+      };
+
+      const selectedWidget = findWidgetInLayout(dashboardState.layout.layouts, selectedWidgetId);
+      
+      // If the selected widget is a card, add the new widget to it
+      if (selectedWidget && selectedWidget.type === 'card') {
+        addWidget(widgetType, undefined, selectedWidgetId);
+        message.success(`Added ${widgetType} widget to ${selectedWidget.widget.properties.title || 'Card'} container`);
+        return;
+      }
+    }
+    
+    // Otherwise add to the main layout
     addWidget(widgetType);
     message.success(`Added ${widgetType} widget to bottom of layout`);
   };
@@ -172,9 +203,14 @@ const DashboardDesigner: React.FC = () => {
         <Button
           icon={<EyeOutlined />}
           onClick={handlePreview}
+          style={{ marginRight: 8 }}
         >
           Preview
         </Button>
+        
+        {dashboardState.editMode && (
+          <MarketplaceButton />
+        )}
       </Header>
       <Layout>
         {dashboardState.editMode && (

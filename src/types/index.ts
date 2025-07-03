@@ -65,4 +65,5 @@ export interface DashboardState {
   layout: DashboardLayout;
   editMode: boolean;
   selectedWidgetId: string | null;
+  refreshTimestamp?: number; // Timestamp for triggering widget registry refresh
 }
