@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Dropdown, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { DashboardContext } from '../../contexts/DashboardContext';
-import widgetRegistry from './WidgetRegistry';
+import WIDGET_REGISTRY from './WidgetRegistry';
 import '../../styles/widget-actions.css';
 
 interface AddWidgetButtonProps {
@@ -21,7 +21,7 @@ const AddWidgetButton: React.FC<AddWidgetButtonProps> = ({ containerId }) => {
   };
   
   // Create menu items for each available widget type
-  const widgetMenuItems = Object.values(widgetRegistry).map(widgetDef => ({
+  const widgetMenuItems = Object.values(WIDGET_REGISTRY).map(widgetDef => ({
     key: widgetDef.type,
     label: widgetDef.name,
     icon: widgetDef.icon,

@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons';
 import { DashboardContext } from '../contexts/DashboardContext';
 import DashboardGrid from './DashboardGrid';
-import widgetRegistry, { getWidgetDefinition } from './widgets/WidgetRegistry';
+import WIDGET_REGISTRY, { getWidgetDefinition } from './widgets/WidgetRegistry';
 
 const { Header, Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -183,7 +183,7 @@ const DashboardDesigner: React.FC = () => {
               <h3>Widgets</h3>
               <Menu 
                 mode="vertical"
-                items={Object.values(widgetRegistry).map((widget) => ({
+                items={Object.values(WIDGET_REGISTRY).map((widget) => ({
                   key: widget.type,
                   icon: widget.icon,
                   label: widget.name,

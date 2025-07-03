@@ -10,7 +10,7 @@ import TablePropertyEditor from '../propertyEditors/TablePropertyEditor';
 import CardPropertyEditor from '../propertyEditors/CardPropertyEditor';
 
 // Registry of all available widgets
-const widgetRegistry: Record<string, WidgetDefinition> = {
+const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   text: {
     type: 'text',
     name: 'Text',
@@ -29,7 +29,7 @@ const widgetRegistry: Record<string, WidgetDefinition> = {
     type: 'chart',
     name: 'Chart',
     icon: <BarChartOutlined />,
-    defaultSize: [4, 3],
+    defaultSize: [5, 6],
     defaultProperties: {
       chartType: 'bar',
       data: [
@@ -39,7 +39,7 @@ const widgetRegistry: Record<string, WidgetDefinition> = {
       ],
       xAxisKey: 'name',
       yAxisKey: 'value',
-      title: 'Chart Title',
+      title: '',
     },
     component: ChartWidget,
     propertyEditor: ChartPropertyEditor,
@@ -59,7 +59,7 @@ const widgetRegistry: Record<string, WidgetDefinition> = {
       ],
       xAxisKey: 'name',
       yAxisKey: 'value',
-      title: 'Line Chart Title',
+      title: '',
     },
     component: ChartWidget,
     propertyEditor: ChartPropertyEditor,
@@ -89,7 +89,7 @@ const widgetRegistry: Record<string, WidgetDefinition> = {
     icon: <CreditCardOutlined />,
     defaultSize: [6, 4],
     defaultProperties: {
-      title: 'Card Title',
+      title: '',
       bordered: true,
     },
     component: CardWidget,
@@ -98,11 +98,11 @@ const widgetRegistry: Record<string, WidgetDefinition> = {
   },
 };
 
-export default widgetRegistry;
+export default WIDGET_REGISTRY;
 
 // Helper function to get a widget definition by type
 export const getWidgetDefinition = (type: string): WidgetDefinition => {
-  return widgetRegistry[type] || widgetRegistry.text;
+  return WIDGET_REGISTRY[type] || WIDGET_REGISTRY.text;
 };
 
 // Helper function to create a new widget instance
