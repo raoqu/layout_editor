@@ -2,6 +2,7 @@ import React, { createContext, useState, useCallback } from 'react';
 import type { DashboardState, DashboardLayout, ContainerWidget, WidgetLayoutItem } from '../types';
 import { createWidget } from '../components/widgets/WidgetRegistry';
 import { v4 as uuidv4 } from 'uuid';
+import { findWidgetInLayout, createBottomPositionedItem } from '../utils/layoutUtils';
 
 interface DashboardContextProps {
   dashboardState: DashboardState;
@@ -64,24 +65,15 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (containerItem) {
           const containerWidget = containerItem.widget as ContainerWidget;
           if (containerWidget.children && containerWidget.children.layout) {
-            // Find the bottom-most position in the container layout
-            let maxY = 0;
-            containerWidget.children.layout.layouts.forEach(item => {
-              const itemBottom = item.y + item.h;
-              if (itemBottom > maxY) {
-                maxY = itemBottom;
-              }
-            });
-
-            // Create new layout item positioned at the bottom
-            const newLayoutItem: WidgetLayoutItem = {
-              i: widgetId,
-              x: position?.x ?? 0, // Use provided position or default to 0
-              y: maxY, // Place at the bottom
+            // Create new layout item positioned at the bottom of the container
+            const newLayoutItem = createBottomPositionedItem(
+              containerWidget.children.layout.layouts,
+              widgetId,
+              newWidget,
               w,
               h,
-              widget: newWidget,
-            };
+              position
+            );
             
             // Add the new widget to the container's layout
             containerWidget.children.layout.layouts.push(newLayoutItem);
@@ -99,24 +91,15 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } else {
       // Add the widget to the main layout
       setDashboardState((prevState) => {
-        // Find the bottom-most position in the main layout
-        let maxY = 0;
-        prevState.layout.layouts.forEach(item => {
-          const itemBottom = item.y + item.h;
-          if (itemBottom > maxY) {
-            maxY = itemBottom;
-          }
-        });
-
-        // Create new layout item positioned at the bottom
-        const newLayoutItem: WidgetLayoutItem = {
-          i: widgetId,
-          x: position?.x ?? 0, // Use provided position or default to 0
-          y: maxY, // Place at the bottom
+        // Create new layout item positioned at the bottom of the main layout
+        const newLayoutItem = createBottomPositionedItem(
+          prevState.layout.layouts,
+          widgetId,
+          newWidget,
           w,
           h,
-          widget: newWidget,
-        };
+          position
+        );
 
         return {
           ...prevState,
@@ -208,23 +191,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   }, []);
 
-  const findWidgetInLayout = (layouts: WidgetLayoutItem[], widgetId: string): WidgetLayoutItem | null => {
-    for (const item of layouts) {
-      if (item.i === widgetId) {
-        return item;
-      }
-      
-      // Check if this is a container widget with nested layouts
-      const widget = item.widget as any;
-      if (widget.children?.layout?.layouts) {
-        const nestedResult = findWidgetInLayout(widget.children.layout.layouts, widgetId);
-        if (nestedResult) {
-          return nestedResult;
-        }
-      }
-    }
-    return null;
-  };
+  // Using findWidgetInLayout imported from layoutUtils
 
   const updateWidgetProperty = useCallback((widgetId: string, propertyName: string, value: any) => {
     setDashboardState((prevState) => {

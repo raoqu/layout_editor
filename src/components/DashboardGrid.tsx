@@ -3,10 +3,11 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 // Import the CSS directly from node_modules
 import '../styles/grid-layout.css';
 import '../styles/widget-actions.css';
-import type { DashboardLayout, WidgetLayoutItem } from '../types';
 import { DashboardContext } from '../contexts/DashboardContext';
+import type { WidgetLayoutItem, DashboardLayout } from '../types';
 import { getWidgetDefinition } from './widgets/WidgetRegistry';
 import AddWidgetButton from './widgets/AddWidgetButton';
+import { optimizeLayoutForDragging } from '../utils/layoutUtils';
 import './DashboardGrid.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -73,58 +74,12 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
       const draggedItem = newLayoutItems.find(item => item.i === draggedWidgetId);
       
       if (draggedItem) {
-        // Create a new layout that minimizes position changes for non-dragged widgets
-        const optimizedLayout = newLayoutItems.map(newItem => {
-          // Keep the dragged item at its new position
-          if (newItem.i === draggedWidgetId) {
-            const originalItem = originalLayouts.find((item: WidgetLayoutItem) => item.i === draggedWidgetId);
-            return {
-              ...newItem,
-              widget: originalItem ? originalItem.widget : newItem.widget
-            };
-          }
-          
-          // For non-dragged items, find the closest valid position to their original position
-          const originalItem = originalLayouts.find((item: WidgetLayoutItem) => item.i === newItem.i);
-          if (originalItem) {
-            // Check if the new position is significantly different from the original
-            const xDiff = Math.abs(newItem.x - originalItem.x);
-            const yDiff = Math.abs(newItem.y - originalItem.y);
-            
-            // If the position has changed significantly, try to find a better position
-            if (xDiff > 1 || yDiff > 1) {
-              // Start from the original position and find the nearest valid position
-              // that doesn't overlap with the dragged item or other already placed items
-              // For simplicity in this implementation, we'll just prefer positions
-              // that are closer to the original y-coordinate when possible
-              if (yDiff > xDiff && newItem.y !== originalItem.y) {
-                // Try to keep the original y-coordinate if possible
-                const itemAtOriginalY = newLayoutItems.find(item => 
-                  item !== newItem && 
-                  item.i !== draggedWidgetId && 
-                  item.y === originalItem.y && 
-                  ((item.x <= originalItem.x && item.x + item.w > originalItem.x) || 
-                   (item.x >= originalItem.x && originalItem.x + originalItem.w > item.x))
-                );
-                
-                if (!itemAtOriginalY) {
-                  return {
-                    ...newItem,
-                    y: originalItem.y,
-                    widget: originalItem.widget
-                  };
-                }
-              }
-            }
-            
-            return {
-              ...newItem,
-              widget: originalItem.widget
-            };
-          }
-          
-          return newItem;
-        });
+        // Use the optimizeLayoutForDragging utility to create a layout that minimizes position changes
+        const optimizedLayout = optimizeLayoutForDragging(
+          newLayoutItems,
+          originalLayouts,
+          draggedWidgetId
+        );
         
         const updatedLayout = {
           ...layout,
