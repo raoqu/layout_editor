@@ -1,0 +1,13 @@
+:80 {
+    root * /Users/raoqu/mylab/dash_designer/dist
+    encode gzip
+
+    file_server
+
+    @spa {
+        # 匹配任何路径除了 /api 和 /assets
+        not path /api*
+        not path /assets*
+    }
+    rewrite @spa /index.html
+}
