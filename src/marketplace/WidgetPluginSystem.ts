@@ -144,13 +144,6 @@ class WidgetPluginSystem {
       // Parse the URL
       const parsedUrl = new URL(url);
       
-      // If URL is localhost:4173, change it to localhost:5180
-      // This is because Vite preview uses 4173 but our widget server uses 5180
-      if (parsedUrl.hostname === 'localhost' && parsedUrl.port === '4173') {
-        console.log(`[WidgetPluginSystem] Correcting port from 4173 to 5180 for ${url}`);
-        parsedUrl.port = '5180';
-      }
-      
       return parsedUrl.toString();
     } catch (error) {
       console.error(`[WidgetPluginSystem] Error normalizing URL ${url}:`, error);

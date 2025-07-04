@@ -130,29 +130,36 @@ const WidgetMarketplace: React.FC<WidgetMarketplaceProps> = ({ onWidgetInstalled
     <>
       <div className="marketplace-filters">
         <Space wrap>
+          <Button
+            type="text"
+            icon={<SearchOutlined />}
+            onClick={() => {}}
+          />
           <Input.Search
             placeholder="Search widgets..."
             onSearch={handleSearch}
             style={{ width: 250 }}
-            prefix={<SearchOutlined />}
             allowClear
           />
-          
+          <Button
+            type="text"
+            icon={<SortAscendingOutlined />}
+            onClick={() => {}}
+          />
           <Select
             defaultValue="popular"
             style={{ width: 150 }}
             onChange={handleSortChange}
-            prefix={<SortAscendingOutlined />}
           >
             <Option value="popular">Most Popular</Option>
             <Option value="recent">Recently Updated</Option>
             <Option value="rating">Highest Rated</Option>
           </Select>
-          
-          <div className="filter-label">
-            <FilterOutlined /> Filter by tags:
-          </div>
-          
+          <Button
+            type="text"
+            icon={<FilterOutlined />}
+            onClick={() => {}}
+          />
           <div className="tag-filters">
             {['weather', 'timer', 'chart', 'finance', 'data'].map(tag => (
               <Tag
@@ -240,7 +247,7 @@ const WidgetMarketplace: React.FC<WidgetMarketplaceProps> = ({ onWidgetInstalled
           tab={
             <span>
               <DownloadOutlined />
-              Browse Widgets
+              {/* Browse Widgets */}
             </span>
           } 
           key="1"
@@ -256,7 +263,6 @@ const WidgetMarketplace: React.FC<WidgetMarketplaceProps> = ({ onWidgetInstalled
           } 
           key="2"
         >
-          <RemoteWidgetManager onWidgetUpdated={handleWidgetUpdated} />
         </TabPane>
       </Tabs>
       

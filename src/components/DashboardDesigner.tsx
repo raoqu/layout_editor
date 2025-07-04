@@ -158,54 +158,45 @@ const DashboardDesigner: React.FC = () => {
         {dashboardState.editMode && selectedWidgetId && (
           <>
             <Button
-              type="primary"
-              icon={<SettingOutlined />}
+              type="text"
+              icon={<SettingOutlined style={{ color: 'white' }} />}
               onClick={() => setDrawerVisible(true)}
               style={{ marginRight: 8 }}
-            >
-              Properties
-            </Button>
+            />
             <Button
+              type="text"
               danger
-              icon={<DeleteOutlined />}
+              icon={<DeleteOutlined style={{ color: 'white' }} />}
               onClick={handleRemoveWidget}
               style={{ marginRight: 16 }}
-            >
-              Remove
-            </Button>
+            />
           </>
         )}
         
         <Button
-          type={dashboardState.editMode ? 'primary' : 'default'}
-          icon={<EditOutlined />}
+          type="text"
+          icon={<EditOutlined style={{ color: 'white' }} />}
           onClick={toggleEditMode}
           style={{ marginRight: 8 }}
-        >
-          {dashboardState.editMode ? 'Exit Edit Mode' : 'Edit Mode'}
-        </Button>
+        />
         <Button
-          icon={<ImportOutlined />}
+          type="text"
+          icon={<ImportOutlined style={{ color: 'white' }} />}
           onClick={() => setImportModalVisible(true)}
           style={{ marginRight: 8 }}
-        >
-          Import
-        </Button>
+        />
         <Button
-          icon={<ExportOutlined />}
+          type="text"
+          icon={<ExportOutlined style={{ color: 'white' }} />}
           onClick={handleExport}
           style={{ marginRight: 8 }}
-        >
-          Export
-        </Button>
+        />
         <Button
-          icon={<EyeOutlined />}
+          type="text"
+          icon={<EyeOutlined style={{ color: 'white' }} />}
           onClick={handlePreview}
           style={{ marginRight: 8 }}
-        >
-          Preview
-        </Button>
-        
+        />
         {dashboardState.editMode && (
           <MarketplaceButton />
         )}
