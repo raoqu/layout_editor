@@ -33,8 +33,38 @@ const DashboardDesigner: React.FC = () => {
   const [importData, setImportData] = useState('');
   const [exportData, setExportData] = useState('');
 
+  // Helper function to find a widget in the layout
+  const findWidgetInLayout = (layouts: any[], widgetId: string): any => {
+    for (const item of layouts) {
+      if (item.i === widgetId) {
+        return { widget: item.widget, type: item.widget.type, id: item.i };
+      }
+      
+      // Check if this is a container widget with nested layouts
+      if (item.widget.children?.layout?.layouts) {
+        const nestedResult = findWidgetInLayout(item.widget.children.layout.layouts, widgetId);
+        if (nestedResult) {
+          return nestedResult;
+        }
+      }
+    }
+    return null;
+  };
+
   const handleAddWidget = (widgetType: string) => {
-    // Position is undefined to let the context determine the best bottom position
+    // Check if a card widget is currently selected
+    if (selectedWidgetId) {
+      const selectedWidget = findWidgetInLayout(dashboardState.layout.layouts, selectedWidgetId);
+      
+      // If the selected widget is a card, add the new widget to it
+      if (selectedWidget && selectedWidget.type === 'card') {
+        addWidget(widgetType, undefined, selectedWidgetId);
+        message.success(`Added ${widgetType} widget to ${selectedWidget.widget.title || 'Card'} container`);
+        return;
+      }
+    }
+    
+    // Otherwise add to the main layout
     addWidget(widgetType);
     message.success(`Added ${widgetType} widget to bottom of layout`);
   };
@@ -79,25 +109,8 @@ const DashboardDesigner: React.FC = () => {
       return <div style={{ padding: 16 }}>Select a widget to edit its properties</div>;
     }
 
-    // Find the selected widget in the layout
-    const findWidgetInLayout = (layouts: any[], widgetId: string): any => {
-      for (const item of layouts) {
-        if (item.i === widgetId) {
-          return item.widget;
-        }
-        
-        // Check if this is a container widget with nested layouts
-        if (item.widget.children?.layout?.layouts) {
-          const nestedResult = findWidgetInLayout(item.widget.children.layout.layouts, widgetId);
-          if (nestedResult) {
-            return nestedResult;
-          }
-        }
-      }
-      return null;
-    };
-
-    const selectedWidget = findWidgetInLayout(dashboardState.layout.layouts, selectedWidgetId);
+    const selectedWidgetInfo = findWidgetInLayout(dashboardState.layout.layouts, selectedWidgetId);
+    const selectedWidget = selectedWidgetInfo?.widget;
     
     if (!selectedWidget) {
       return <div style={{ padding: 16 }}>Widget not found</div>;
@@ -125,25 +138,18 @@ const DashboardDesigner: React.FC = () => {
         
         {dashboardState.editMode && selectedWidgetId && (
           <>
-            <span style={{ color: 'white', marginRight: 8 }}>
-              Selected: {dashboardState.layout.layouts.find(item => item.i === selectedWidgetId)?.widget.title}
-            </span>
             <Button
               type="primary"
               icon={<SettingOutlined />}
               onClick={() => setDrawerVisible(true)}
               style={{ marginRight: 8 }}
-            >
-              Properties
-            </Button>
+            />
             <Button
               danger
               icon={<DeleteOutlined />}
               onClick={handleRemoveWidget}
               style={{ marginRight: 16 }}
-            >
-              Remove
-            </Button>
+            />
           </>
         )}
         
@@ -152,29 +158,26 @@ const DashboardDesigner: React.FC = () => {
           icon={<EditOutlined />}
           onClick={toggleEditMode}
           style={{ marginRight: 8 }}
-        >
-          {dashboardState.editMode ? 'Exit Edit Mode' : 'Edit Mode'}
-        </Button>
+          title={dashboardState.editMode ? 'Exit Edit Mode' : 'Edit Mode'}
+        />
         <Button
           icon={<ImportOutlined />}
           onClick={() => setImportModalVisible(true)}
           style={{ marginRight: 8 }}
-        >
-          Import
-        </Button>
+          title="Import"
+        />
         <Button
           icon={<ExportOutlined />}
           onClick={handleExport}
           style={{ marginRight: 8 }}
-        >
-          Export
-        </Button>
+          title="Export"
+        />
         <Button
           icon={<EyeOutlined />}
           onClick={handlePreview}
-        >
-          Preview
-        </Button>
+          style={{ marginRight: 8 }}
+          title="Preview"
+        />
       </Header>
       <Layout>
         {dashboardState.editMode && (

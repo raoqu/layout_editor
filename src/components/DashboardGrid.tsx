@@ -6,7 +6,6 @@ import '../styles/widget-actions.css';
 import { DashboardContext } from '../contexts/DashboardContext';
 import type { WidgetLayoutItem, DashboardLayout } from '../types';
 import { getWidgetDefinition } from './widgets/WidgetRegistry';
-import AddWidgetButton from './widgets/AddWidgetButton';
 import { optimizeLayoutForDragging } from '../utils/layoutUtils';
 import './DashboardGrid.css';
 
@@ -180,7 +179,7 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
               {isEditing && (
                 <div className="widget-overlay">
                   <div className="widget-drag-area" data-widget-type={item.widget.type} data-widget-id={item.i}>
-                    {item.widget.type === 'card' && <AddWidgetButton containerId={item.i} />}
+                    {/* Add widget button removed - now using sidebar to add widgets */}
                   </div>
                   <div className="widget-resize-area" />
                 </div>

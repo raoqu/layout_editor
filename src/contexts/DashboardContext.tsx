@@ -110,8 +110,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
       });
     }
-
-    setSelectedWidgetId(widgetId);
+    
+    // Don't automatically select the newly added widget
+    // setSelectedWidgetId(widgetId);
   }, []);
 
   // Helper function to find the parent container of a widget
